@@ -6,7 +6,6 @@ from enum import Enum
 from functools import partial
 from pathlib import Path
 from typing import Optional
-
 import instaloader
 import yt_dlp
 from pyrogram import filters
@@ -79,6 +78,9 @@ class MediaDownloader:
                     'format': 'bestvideo+bestaudio/best',
                     'outtmpl': f'{target_dir}/{dirname}.%(ext)s',
                     'max_filesize': self.MAX_FILE_SIZE,
+                    'cookiefile': './cookies.txt',
+                    'quiet': True,
+                    'no_warnings': True,
                     'postprocessors': [{
                         'key': 'FFmpegVideoConvertor',
                         'preferedformat': 'mp4'
