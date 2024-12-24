@@ -1,6 +1,14 @@
 FROM python:3.12.4
 WORKDIR /app
 
+
+# Install system dependencies including FFmpeg
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+
 # Create and activate a virtual environment
 RUN python -m venv myenv
 RUN . myenv/bin/activate
