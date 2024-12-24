@@ -1,0 +1,9 @@
+python-dotenv
+aiohttp
+pyrogram
+TgCrypto
+pytz
+yt-dlp
+requests
+ffmpeg-python
+instaloader
