@@ -1,4 +1,5 @@
 import asyncio
+import os
 import re
 import shutil
 from dataclasses import dataclass
@@ -36,6 +37,13 @@ class MediaDownloader:
     def __init__(self):
         self.OUTPUT_DIR.mkdir(exist_ok=True)
         self._last_progress_update = {}
+
+    # Create cookies file from environment
+    cookie_content = os.getenv('COOKIE_CONTENT')
+    if cookie_content:
+        with open('cookies.txt', 'w') as f:
+            f.write(cookie_content)
+
 
     def _cleanup_files(self, dirname: str) -> None:
         try:

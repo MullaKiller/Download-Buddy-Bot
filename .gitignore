@@ -125,6 +125,8 @@ Bot.session-journal
 # SageMath parsed files
 *.sage.py
 
+cookies.txt
+
 # Environments
 #.env
 .venv
