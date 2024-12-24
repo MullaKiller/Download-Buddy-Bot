@@ -79,7 +79,7 @@ class MediaDownloader:
                     'format': 'bestvideo+bestaudio/best',
                     'outtmpl': f'{target_dir}/{dirname}.%(ext)s',
                     'max_filesize': self.MAX_FILE_SIZE,
-                    'cookiefile': './cookies.txt',
+                    'cookiefile': './plugins/cookies.txt',
                     'quiet': True,
                     'no_warnings': True,
                     'postprocessors': [{
