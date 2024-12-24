@@ -1,9 +1,27 @@
-python-dotenv
-aiohttp
-pyrogram
+# --- For-Bot-Working --------- #
+pyrofork
 TgCrypto
+pyromod
+python-dotenv
+Pyrogram
+# --- For-Database ------------ #
+pymongo
+motor
+umongo
+marshmallow
+dnspython
+# --- For-Web-Response ------- #
+pytz
+requests
+bs4
+shortzy
+aiohttp
+aiofiles
+asyncio
+# --- Time zone ------- #
 pytz
 yt-dlp
 requests
 ffmpeg-python
+moviepy
 instaloader

@@ -1,24 +1,21 @@
+import asyncio
 import re
 import shutil
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from functools import partial
 from pathlib import Path
 from typing import Optional
+
 import instaloader
 import yt_dlp
 from pyrogram import filters
 from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
 
 from plugins.bot import Bot
+from plugins.utils.logger import get_logger
 
-
-class MediaType(Enum):
-    VIDEO = "video"
-    AUDIO = "audio"
-    PHOTO = "photo"
-
+logger = get_logger(__name__)
 
 @dataclass
 class Platform:
@@ -43,25 +40,30 @@ class MediaDownloader:
     def _cleanup_files(self, dirname: str) -> None:
         try:
             target_dir = self.OUTPUT_DIR / dirname
-            print(target_dir)
             if target_dir.exists():
                 shutil.rmtree(target_dir)
         except Exception as e:
-            print(f"Error cleaning up directory: {e}")
+            logger.error(f"Error cleaning up directory: {str(e)}")
 
     async def _update_progress(self, current: int, total: int, message: Message,
                                status_msg: Message) -> None:
-        msg_id = f"{message.chat.id}-{status_msg.id}"
-        now = datetime.now()
+        try:
 
-        if (msg_id not in self._last_progress_update or
-                (now - self._last_progress_update[msg_id]).total_seconds() >= self.PROGRESS_UPDATE_INTERVAL):
-            try:
+            # Ensure `current` and `total` are integers
+            current = int(current)
+            total = int(total)
+            msg_id = f"{message.chat.id}-{status_msg.id}"
+            now = datetime.now()
+
+            # Update progress only if interval has elapsed
+            if (msg_id not in self._last_progress_update or
+                    (now - self._last_progress_update[msg_id]).total_seconds() >= self.PROGRESS_UPDATE_INTERVAL):
                 progress = round(current * 100 / total)
                 await status_msg.edit_text(f"Uploading...\n\n{progress}%")
                 self._last_progress_update[msg_id] = now
-            except Exception as e:
-                print(f"Progress update error: {e}")
+
+        except Exception as e:
+            logger.error(f"Progress update error: {str(e)}")
 
     async def downoad_yt_x_videos(self, message: Message, url: str, media_type: str = "video"):
 
@@ -73,7 +75,6 @@ class MediaDownloader:
 
             # choosing media type
             if media_type == "video":
-                print("cum video")
                 ydl_opts = {
                     'format': 'bestvideo+bestaudio/best',
                     'outtmpl': f'{target_dir}/{dirname}.%(ext)s',
@@ -87,7 +88,6 @@ class MediaDownloader:
                     }]
                 }
             else:
-                print("cum audio ")
                 ydl_opts = {
                     'format': 'bestaudio/best',
                     'outtmpl': f'{target_dir}/{dirname}.%(ext)s',
@@ -117,8 +117,9 @@ class MediaDownloader:
                         'caption': title
                     }
                 filepath = info['requested_downloads'][0]['filepath']
+
                 if isinstance(filepath, (int, float)):
-                    raise ValueError("Invalid file path received")
+                    raise ValueError(f"Invalid file path received : {str(filepath)}")
 
                 if Path(filepath).exists() and Path(filepath).stat().st_size > self.MAX_FILE_SIZE:
                     raise ValueError(f"File size exceeds {self.MAX_FILE_SIZE // 1024 // 1024}MB limit")
@@ -131,12 +132,20 @@ class MediaDownloader:
                     await message.reply_audio(filepath, progress=progress, **metadata)
                 await status_msg.delete()
 
-        except yt_dlp.utils.DownloadError:
+        except yt_dlp.utils.DownloadError as ed:
+            logger.error(f"Getting error from yt_dlp download error : {str(ed)}")
             await status_msg.edit_text('Download failed: 😞')
+            await asyncio.sleep(15)
+            await status_msg.delete()
         except ValueError as ve:
-            await status_msg.edit_text(str(ve))
+            logger.error(f"Value error : {str(ve)}")
+            await asyncio.sleep(15)
+            await status_msg.delete()
         except Exception as e:
-            await status_msg.edit_text(f"Error: {str(e)}")
+            logger.error(f"Error : {str(e)}")
+            await status_msg.edit_text(f"Something went wrong 😑")
+            await asyncio.sleep(15)
+            await status_msg.delete()
         finally:
             self._cleanup_files(dirname)
 
@@ -207,18 +216,21 @@ class MediaDownloader:
             await message.reply_media_group(media_group)
             await status_msg.delete()
 
-        except instaloader.exceptions.InstaloaderException:
-
+        except instaloader.exceptions.InstaloaderException as ie:
+            logger.error(f" Instaloader error : {str(ie)}")
             await status_msg.edit_text('Download failed: 😞')
-
+            await asyncio.sleep(15)
+            await status_msg.delete()
         except ValueError as ve:
-
-            await status_msg.edit_text(str(ve))
+            logger.error(f"Value error : {str(ve)}")
+            await asyncio.sleep(15)
+            await status_msg.delete()
 
         except Exception as e:
-
+            logger.error(f"Error : {str(e)}")
             await status_msg.edit_text(f"Error: {str(e)}")
-
+            await asyncio.sleep(15)
+            await status_msg.delete()
         finally:
             self._cleanup_files(dirname)
 
@@ -231,9 +243,7 @@ class MediaDownloader:
 async def download_command(client: Bot, message: Message):
     downloader = MediaDownloader()
     url = message.text
-    print(message.text)
-    if downloader.SUPPORTED_PLATFORMS["youtube"] == downloader.validate_url(url) or downloader.SUPPORTED_PLATFORMS[
-        "twitter"] == downloader.validate_url(url):
+    if downloader.SUPPORTED_PLATFORMS["youtube"] == downloader.validate_url(url) or downloader.SUPPORTED_PLATFORMS["twitter"] == downloader.validate_url(url):
         await downloader.downoad_yt_x_videos(message, url)
     elif downloader.SUPPORTED_PLATFORMS["instagram"] == downloader.validate_url(url):
         await downloader.download_instagram_post_and_reels(message, url)
@@ -241,33 +251,28 @@ async def download_command(client: Bot, message: Message):
 
 @Bot.on_message(filters.command("audio") & filters.group)
 async def download_audio_command(client: Bot, message: Message):
-    print(f"Command received: {message.text}")
-    print(f"Chat type: {message.chat.type}")
-    print(f"Is command: {message.text.startswith('/')}")
-    print(f"Is group: {message.chat.type == 'group' or message.chat.type == 'supergroup'}")
 
     try:
         # Extract URL
         if len(message.text.split()) > 1:
             url = message.text.split(maxsplit=1)[1].strip()
-            print(f"URL from direct command: {url}")
         elif message.reply_to_message and message.reply_to_message.text:
             url = message.reply_to_message.text.strip()
-            print(f"URL from reply: {url}")
         else:
-            print("No URL found")
             await message.reply_text("Please provide a URL or reply to a message containing a URL")
+            await asyncio.sleep(15)
+            await message.delete()
             return
 
         downloader = MediaDownloader()
         platform = downloader.validate_url(url)
-        print(f"Detected platform: {platform.name if platform else 'None'}")
 
         if not platform:
             await message.reply_text("Invalid URL. Please provide a valid YouTube, Twitter, or Instagram URL")
+            await asyncio.sleep(15)
+            await message.delete()
             return
 
-        print(f"Processing URL: {url} for platform: {platform.name}")
         if platform == downloader.SUPPORTED_PLATFORMS["youtube"] or \
                 platform == downloader.SUPPORTED_PLATFORMS["twitter"]:
             await downloader.downoad_yt_x_videos(message, url, "audio")
@@ -275,7 +280,11 @@ async def download_audio_command(client: Bot, message: Message):
             await downloader.downoad_yt_x_videos(message, url, "audio")
         else:
             await message.reply_text("This type of content cannot be converted to audio")
+            await asyncio.sleep(15)
+            await message.delete()
 
     except Exception as e:
-        print(f"Error in audio command: {str(e)}")
+        logger.error(f"Error in audio command: {str(e)}")
         await message.reply_text(f"Error processing audio command: {str(e)}")
+        await asyncio.sleep(15)
+        await message.delete()
