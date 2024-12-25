@@ -16,5 +16,10 @@ TG_BOT_WORKERS = int(os.environ.get("TG_BOT_WORKERS", "1"))
 OWNER_TAG = os.environ.get("OWNER_TAG", "")
 
 # Additional settings
-CUSTOM_CAPTION = os.environ.get("CUSTOM_CAPTION", "")
+CHANNEL1 = int(os.environ.get("CHANNEL1", 0))
+CHANNEL2 = int(os.environ.get("CHANNEL2", 0))
+GROUP1 = int(os.environ.get("GROUP1", 0))
+GROUP2 = int(os.environ.get("GROUP2", 0))
+CUSTOM_MESSAGE = os.environ.get("CUSTOM_MESSAGE", "")
+YT_API = os.environ.get("YT_API", "")
 PORT = os.environ.get("PORT", "8080")

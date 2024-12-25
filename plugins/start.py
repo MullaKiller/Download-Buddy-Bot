@@ -1,5 +1,4 @@
 import asyncio
-import os
 import re
 import shutil
 from dataclasses import dataclass
@@ -8,15 +7,20 @@ from functools import partial
 from pathlib import Path
 from typing import Optional
 
+import googleapiclient
 import instaloader
 import yt_dlp
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from pyrogram import filters
 from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
 
+from config import YT_API, CUSTOM_MESSAGE, CHANNEL1, CHANNEL2, GROUP1, GROUP2
 from plugins.bot import Bot
 from plugins.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
 
 @dataclass
 class Platform:
@@ -37,13 +41,10 @@ class MediaDownloader:
     def __init__(self):
         self.OUTPUT_DIR.mkdir(exist_ok=True)
         self._last_progress_update = {}
-
-    # Create cookies file from environment
-    cookie_content = os.getenv('COOKIE_CONTENT')
-    if cookie_content:
-        with open('cookies.txt', 'w') as f:
-            f.write(cookie_content)
-
+        self.api_key = YT_API
+        self.youtube_service = googleapiclient.discovery.build(
+            "youtube", "v3", developerKey=self.api_key
+        )
 
     def _cleanup_files(self, dirname: str) -> None:
         try:
@@ -73,7 +74,119 @@ class MediaDownloader:
         except Exception as e:
             logger.error(f"Progress update error: {str(e)}")
 
-    async def downoad_yt_x_videos(self, message: Message, url: str, media_type: str = "video"):
+    async def download_yt_video_audio(self, message: Message, url: str, media_type: str = "video"):
+        status_msg = await message.reply_text('Processing...')
+        dirname = str(int(datetime.now().timestamp() * 1000))
+        target_dir = self.OUTPUT_DIR / dirname
+
+        try:
+            logger.info(f"Starting download for URL: {url}")
+            target_dir.mkdir(parents=True, exist_ok=True)
+
+            # Extract the video ID from the URL
+            video_id_match = re.search(r'(?:v=|youtu\.be/|shorts/)([\w-]+)', url)
+
+            if not video_id_match:
+                raise ValueError("Invalid YouTube URL.")
+
+            video_id = video_id_match.group(1)
+            logger.info(f"Extracted video ID: {video_id}")
+
+            # Fetch video metadata
+            request = self.youtube_service.videos().list(part="snippet,contentDetails", id=video_id)
+            response = request.execute()
+
+            if not response["items"]:
+                raise ValueError("No video found with the provided ID.")
+
+            video_info = response["items"][0]
+            title = f"{video_info["snippet"]["title"]}\n\nRequested by {message.from_user.mention}\n\n{CUSTOM_MESSAGE}"
+            duration = video_info["contentDetails"]["duration"]
+            logger.info(f"Video metadata fetched. Title: {title}")
+
+            # Use yt_dlp for downloading the video
+            ydl_opts = {
+                'format': 'bestvideo+bestaudio/best' if media_type == "video" else 'bestaudio/best',
+                'outtmpl': f'{target_dir}/{dirname}.%(ext)s',
+                'max_filesize': self.MAX_FILE_SIZE,
+                'quiet': False,  # Enable output for debugging
+                'no_warnings': False,  # Enable warnings for debugging
+                'verbose': True,  # Add verbose output
+                'postprocessors': [{
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': 'mp4'
+                }] if media_type == "video" else [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3'
+                }],
+            }
+
+            logger.info("Starting yt-dlp download")
+            await status_msg.edit_text('Starting download...')
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                try:
+                    logger.info("Extracting video info...")
+                    info = ydl.extract_info(url, download=True)
+                    logger.info("Info extraction completed")
+
+                    if 'requested_downloads' not in info:
+                        logger.error("No 'requested_downloads' in info")
+                        raise ValueError("Download failed: No download information available")
+
+                    filepath = info['requested_downloads'][0]['filepath']
+                    logger.info(f"Download completed. Filepath: {filepath}")
+
+                    if not Path(filepath).exists():
+                        logger.error(f"File not found at path: {filepath}")
+                        raise ValueError("Download failed: File not found")
+
+                    # Check file size
+                    file_size = Path(filepath).stat().st_size
+                    logger.info(f"File size: {file_size} bytes")
+
+                    if file_size > self.MAX_FILE_SIZE:
+                        raise ValueError(f"File size exceeds {self.MAX_FILE_SIZE // 1024 // 1024}MB limit")
+
+                    # Send to Telegram
+                    await status_msg.edit_text('Sending file to Telegram...')
+                    progress = partial(self._update_progress, message=message, status_msg=status_msg)
+
+                    if media_type == "video":
+                        await message.reply_video(filepath, caption=title, progress=progress)
+                    else:
+                        await message.reply_audio(filepath, title=title, progress=progress)
+
+                    await status_msg.delete()
+
+                except Exception as ydl_error:
+                    logger.error(f"yt-dlp internal error: {str(ydl_error)}")
+                    raise
+
+        except HttpError as he:
+            logger.error(f"YouTube API error: {str(he)}")
+            await status_msg.edit_text('Failed to fetch video details 😞')
+            await asyncio.sleep(15)
+            await status_msg.delete()
+        except yt_dlp.utils.DownloadError as de:
+            logger.error(f"yt_dlp error: {str(de)}")
+            await status_msg.edit_text(f'Download failed: {str(de)} 😞')
+            await asyncio.sleep(15)
+            await status_msg.delete()
+        except ValueError as ve:
+            logger.error(f"Value error: {str(ve)}")
+            await status_msg.edit_text(str(ve))
+            await asyncio.sleep(15)
+            await status_msg.delete()
+        except Exception as e:
+            logger.error(f"Unexpected error: {str(e)}")
+            await status_msg.edit_text(f"Something went wrong: {str(e)} 😑")
+            await asyncio.sleep(15)
+            await status_msg.delete()
+        finally:
+            self._cleanup_files(dirname)
+
+    async def download_twitter_video_audio(self, message: Message, url: str, media_type: str = "video"):
 
         status_msg = await message.reply_text('Processing...')
         dirname = str(int(datetime.now().timestamp() * 1000))
@@ -81,63 +194,38 @@ class MediaDownloader:
         try:
             target_dir.mkdir(parents=True, exist_ok=True)  # Create subdirectory
 
-            # choosing media type
-            if media_type == "video":
-                ydl_opts = {
-                    'format': 'bestvideo+bestaudio/best',
-                    'outtmpl': f'{target_dir}/{dirname}.%(ext)s',
-                    'max_filesize': self.MAX_FILE_SIZE,
-                    'cookiefile': './cookies.txt',
-                    'quiet': True,
-                    'no_warnings': True,
-                    'postprocessors': [{
-                        'key': 'FFmpegVideoConvertor',
-                        'preferedformat': 'mp4'
-                    }]
-                }
-            else:
-                ydl_opts = {
-                    'format': 'bestaudio/best',
-                    'outtmpl': f'{target_dir}/{dirname}.%(ext)s',
-                    'max_filesize': self.MAX_FILE_SIZE,
-                    'postprocessors': [{
-                        'key': 'FFmpegExtractAudio',
-                        'preferredcodec': 'mp3'
-                    }]
-                }
+            # Use yt_dlp for downloading the video
+            ydl_opts = {
+                'format': 'bestvideo+bestaudio/best' if media_type == "video" else 'bestaudio/best',
+                'outtmpl': f'{target_dir}/{dirname}.%(ext)s',
+                'max_filesize': self.MAX_FILE_SIZE,
+                'quiet': True,
+                'no_warnings': True,
+                'postprocessors': [{
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': 'mp4'
+                }] if media_type == "video" else [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3'
+                }]
+            }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
-                title = f"{info.get('title', 'Unknown Title')}\n\nDownloaded by @nationalMutthal"
-
-                if media_type == "video":
-                    metadata = {
-                        'caption': title,
-                        'width': info['requested_downloads'][0].get('width'),
-                        'height': info['requested_downloads'][0].get('height'),
-                        'duration': info.get('duration')
-                    }
-                else:
-                    metadata = {
-                        'title': title,
-                        'performer': info.get('uploader', 'Unknown'),
-                        'duration': info.get('duration'),
-                        'caption': title
-                    }
                 filepath = info['requested_downloads'][0]['filepath']
+                title = f"{info.get('title', 'Unknown Title')}\n\nRequested by {message.from_user.mention}\n\n{CUSTOM_MESSAGE}"
 
-                if isinstance(filepath, (int, float)):
-                    raise ValueError(f"Invalid file path received : {str(filepath)}")
-
-                if Path(filepath).exists() and Path(filepath).stat().st_size > self.MAX_FILE_SIZE:
+                # Check file size
+                if Path(filepath).stat().st_size > self.MAX_FILE_SIZE:
                     raise ValueError(f"File size exceeds {self.MAX_FILE_SIZE // 1024 // 1024}MB limit")
+
                 await status_msg.edit_text('Sending file to Telegram...')
                 progress = partial(self._update_progress, message=message, status_msg=status_msg)
 
                 if media_type == "video":
-                    await message.reply_video(filepath, progress=progress, **metadata)
+                    await message.reply_video(filepath, caption=title, progress=progress)
                 else:
-                    await message.reply_audio(filepath, progress=progress, **metadata)
+                    await message.reply_audio(filepath, caption=title, progress=progress)
                 await status_msg.delete()
 
         except yt_dlp.utils.DownloadError as ed:
@@ -217,8 +305,10 @@ class MediaDownloader:
                     media_group.append(InputMediaPhoto(media_file))
 
             # Add caption to first media only
-            if media_group:
-                media_group[0].caption = f"{post.caption}\n\nDownloaded by @nationalMutthal"
+
+            if media_group and len(post.caption) < 950:
+                words = post.caption
+                media_group[0].caption = f"{words}\n\nRequested by {message.from_user.mention}\n\n{CUSTOM_MESSAGE}"
 
             # Send as group
             await message.reply_media_group(media_group)
@@ -247,18 +337,30 @@ class MediaDownloader:
                      if re.match(platform.pattern, url)), None)
 
 
-@Bot.on_message(filters.text & filters.group & ~filters.command("audio"))
+@Bot.on_message(filters.text & (filters.group | filters.channel) & ~filters.command("audio"))
 async def download_command(client: Bot, message: Message):
+    if message.chat.id not in [CHANNEL1, CHANNEL2, GROUP1, GROUP2]:
+        return
+
     downloader = MediaDownloader()
     url = message.text
-    if downloader.SUPPORTED_PLATFORMS["youtube"] == downloader.validate_url(url) or downloader.SUPPORTED_PLATFORMS["twitter"] == downloader.validate_url(url):
-        await downloader.downoad_yt_x_videos(message, url)
+    if downloader.SUPPORTED_PLATFORMS["youtube"] == downloader.validate_url(url):
+        await downloader.download_yt_video_audio(message, url)
+
+    elif downloader.SUPPORTED_PLATFORMS["twitter"] == downloader.validate_url(url):
+        await downloader.download_twitter_video_audio(message, url)
+
     elif downloader.SUPPORTED_PLATFORMS["instagram"] == downloader.validate_url(url):
         await downloader.download_instagram_post_and_reels(message, url)
 
+    await message.delete()
+    return
 
-@Bot.on_message(filters.command("audio") & filters.group)
+
+@Bot.on_message((filters.group | filters.channel) & filters.command("audio"))
 async def download_audio_command(client: Bot, message: Message):
+    if message.chat.id not in [CHANNEL1, CHANNEL2, GROUP1, GROUP2]:
+        return
 
     try:
         # Extract URL
@@ -281,18 +383,21 @@ async def download_audio_command(client: Bot, message: Message):
             await message.delete()
             return
 
-        if platform == downloader.SUPPORTED_PLATFORMS["youtube"] or \
-                platform == downloader.SUPPORTED_PLATFORMS["twitter"]:
-            await downloader.downoad_yt_x_videos(message, url, "audio")
+        if platform == downloader.SUPPORTED_PLATFORMS["youtube"]:
+            await downloader.download_yt_video_audio(message, url, "audio")
+
+        elif platform == downloader.SUPPORTED_PLATFORMS["twitter"]:
+            await downloader.download_twitter_video_audio(message, url, "audio")
+
         elif platform == downloader.SUPPORTED_PLATFORMS["instagram"] and "/reel/" in url:
-            await downloader.downoad_yt_x_videos(message, url, "audio")
+            await downloader.download_twitter_video_audio(message, url, "audio")
         else:
             await message.reply_text("This type of content cannot be converted to audio")
             await asyncio.sleep(15)
-            await message.delete()
 
     except Exception as e:
         logger.error(f"Error in audio command: {str(e)}")
         await message.reply_text(f"Error processing audio command: {str(e)}")
         await asyncio.sleep(15)
+    finally:
         await message.delete()
