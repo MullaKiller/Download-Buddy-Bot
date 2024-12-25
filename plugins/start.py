@@ -344,11 +344,8 @@ async def download_command(client: Bot, message: Message):
 
     downloader = MediaDownloader()
     url = message.text
-    if downloader.SUPPORTED_PLATFORMS["youtube"] == downloader.validate_url(url):
-        await downloader.download_yt_video_audio(message, url)
-        await message.delete()
 
-    elif downloader.SUPPORTED_PLATFORMS["twitter"] == downloader.validate_url(url):
+    if downloader.SUPPORTED_PLATFORMS["twitter"] == downloader.validate_url(url):
         await downloader.download_twitter_video_audio(message, url)
         await message.delete()
 
@@ -383,11 +380,7 @@ async def download_audio_command(client: Bot, message: Message):
             await message.delete()
             return
 
-        if platform == downloader.SUPPORTED_PLATFORMS["youtube"]:
-            await downloader.download_yt_video_audio(message, url, "audio")
-            await message.delete()
-
-        elif platform == downloader.SUPPORTED_PLATFORMS["twitter"]:
+        if platform == downloader.SUPPORTED_PLATFORMS["twitter"]:
             await downloader.download_twitter_video_audio(message, url, "audio")
             await message.delete()
 
