@@ -343,16 +343,16 @@ async def download_command(client: Bot, message: Message):
     if message.chat.id not in [CHANNEL1, CHANNEL2, GROUP1, GROUP2]:
         return
 
+    await message.delete()
+
     downloader = MediaDownloader()
     url = message.text
 
     if downloader.SUPPORTED_PLATFORMS["twitter"] == downloader.validate_url(url):
         await downloader.download_twitter_video_audio(message, url)
-        await message.delete()
 
     elif downloader.SUPPORTED_PLATFORMS["instagram"] == downloader.validate_url(url):
         await downloader.download_instagram_post_and_reels(message, url)
-        await message.delete()
 
 
 @Bot.on_message((filters.group | filters.channel) & filters.command("audio"))
@@ -361,6 +361,7 @@ async def download_audio_command(client: Bot, message: Message):
         return
 
     try:
+        await message.delete()
         # Extract URL
         if len(message.text.split()) > 1:
             url = message.text.split(maxsplit=1)[1].strip()
@@ -369,7 +370,6 @@ async def download_audio_command(client: Bot, message: Message):
         else:
             await message.reply_text("Please provide a URL or reply to a message containing a URL")
             await asyncio.sleep(15)
-            await message.delete()
             return
 
         downloader = MediaDownloader()
@@ -378,26 +378,21 @@ async def download_audio_command(client: Bot, message: Message):
         if not platform:
             await message.reply_text("Invalid URL. Please provide a valid YouTube, Twitter, or Instagram URL")
             await asyncio.sleep(15)
-            await message.delete()
             return
 
         if platform == downloader.SUPPORTED_PLATFORMS["twitter"]:
             await downloader.download_twitter_video_audio(message, url, "audio")
-            await message.delete()
 
         elif platform == downloader.SUPPORTED_PLATFORMS["instagram"] and "/reel/" in url:
             await downloader.download_twitter_video_audio(message, url, "audio")
-            await message.delete()
         else:
             await message.reply_text("This type of content cannot be converted to audio")
             await asyncio.sleep(15)
-            await message.delete()
 
     except Exception as e:
         logger.error(f"Error in audio command: {str(e)}")
         await message.reply_text(f"Error processing audio command: {str(e)}")
         await asyncio.sleep(15)
-        await message.delete()
 
 
 @Bot.on_message(filters.group & filters.command("alls") & filters.reply)
