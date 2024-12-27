@@ -188,7 +188,8 @@ class MediaDownloader:
         finally:
             self._cleanup_files(dirname)
 
-    async def download_twitter_video_audio(self, message: Message, url: str, media_type: str = "video"):
+    async def download_twitter_video_audio(self, message: Message, url: str, media_type: str = "video",
+                                           is_channel: bool = False):
 
         status_msg = await message.reply_text('Processing...')
         dirname = str(int(datetime.now().timestamp() * 1000))
@@ -215,7 +216,7 @@ class MediaDownloader:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
                 filepath = info['requested_downloads'][0]['filepath']
-                title = f"{info.get('title', 'Unknown Title')}\n\nRequested by {message.from_user.mention}\n\n{CUSTOM_MESSAGE}"
+                title = f"{info.get('title', 'Unknown Title')}\n\nRequested by {message.from_user.mention}\n\n{CUSTOM_MESSAGE}" if not is_channel else ""
 
                 # Check file size
                 if Path(filepath).stat().st_size > self.MAX_FILE_SIZE:
@@ -247,7 +248,7 @@ class MediaDownloader:
         finally:
             self._cleanup_files(dirname)
 
-    async def download_instagram_post_and_reels(self, message: Message, url: str):
+    async def download_instagram_post_and_reels(self, message: Message, url: str, is_channel: bool = False):
 
         status_msg = await message.reply_text('Processing...')
         dirname = str(int(datetime.now().timestamp() * 1000))
@@ -310,7 +311,8 @@ class MediaDownloader:
 
             if media_group and len(post.caption) < 950:
                 words = post.caption
-                media_group[0].caption = f"{words}\n\nRequested by {message.from_user.mention}\n\n{CUSTOM_MESSAGE}"
+                media_group[
+                    0].caption = f"{words}\n\nRequested by {message.from_user.mention}\n\n{CUSTOM_MESSAGE}" if not is_channel else ""
 
             # Send as group
             await message.reply_media_group(media_group)
@@ -339,8 +341,9 @@ class MediaDownloader:
                      if re.match(platform.pattern, url)), None)
 
 
-@Bot.on_message(filters.text & filters.group & ~filters.command(["audio", "alls"]))
+@Bot.on_message(filters.text & (filters.group | filters.channel) & ~filters.command(["audio", "alls"]))
 async def download_command(client: Bot, message: Message):
+
     if message.chat.id not in [CHANNEL1, CHANNEL2, GROUP1, GROUP2]:
         return
 
@@ -349,11 +352,13 @@ async def download_command(client: Bot, message: Message):
 
     if downloader.SUPPORTED_PLATFORMS["twitter"] == downloader.validate_url(url):
         await message.delete()
-        await downloader.download_twitter_video_audio(message, url)
+        await downloader.download_twitter_video_audio(message, url,
+                                                      is_channel=message.chat.id == CHANNEL1 or message.chat.id == CHANNEL2)
 
     elif downloader.SUPPORTED_PLATFORMS["instagram"] == downloader.validate_url(url):
         await message.delete()
-        await downloader.download_instagram_post_and_reels(message, url)
+        await downloader.download_instagram_post_and_reels(message, url,
+                                                           is_channel=message.chat.id == CHANNEL1 or message.chat.id == CHANNEL2)
 
 
 @Bot.on_message((filters.group | filters.channel) & filters.command("audio"))
@@ -382,10 +387,12 @@ async def download_audio_command(client: Bot, message: Message):
             return
 
         if platform == downloader.SUPPORTED_PLATFORMS["twitter"]:
-            await downloader.download_twitter_video_audio(message, url, "audio")
+            await downloader.download_twitter_video_audio(message, url, "audio",
+                                                          is_channel=message.chat.id == CHANNEL1 or message.chat.id == CHANNEL2)
 
         elif platform == downloader.SUPPORTED_PLATFORMS["instagram"] and "/reel/" in url:
-            await downloader.download_twitter_video_audio(message, url, "audio")
+            await downloader.download_twitter_video_audio(message, url, "audio",
+                                                          is_channel=message.chat.id == CHANNEL1 or message.chat.id == CHANNEL2)
         else:
             await message.reply_text("This type of content cannot be converted to audio")
             await asyncio.sleep(15)
