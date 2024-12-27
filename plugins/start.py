@@ -17,6 +17,7 @@ from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
 
 from config import YT_API, CUSTOM_MESSAGE, CHANNEL1, CHANNEL2, GROUP1, GROUP2
 from plugins.bot import Bot
+from plugins.utils.MemberTagger import MemberTagger
 from plugins.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -337,7 +338,7 @@ class MediaDownloader:
                      if re.match(platform.pattern, url)), None)
 
 
-@Bot.on_message(filters.text & (filters.group | filters.channel) & ~filters.command("audio"))
+@Bot.on_message(filters.text & filters.group & ~filters.command(["audio", "alls"]))
 async def download_command(client: Bot, message: Message):
     if message.chat.id not in [CHANNEL1, CHANNEL2, GROUP1, GROUP2]:
         return
@@ -397,3 +398,46 @@ async def download_audio_command(client: Bot, message: Message):
         await message.reply_text(f"Error processing audio command: {str(e)}")
         await asyncio.sleep(15)
         await message.delete()
+
+
+@Bot.on_message(filters.group & filters.command("alls") & filters.reply)
+async def tag_every_user(client: Bot, message: Message):
+    tagger = MemberTagger()
+
+    if not await tagger.is_admin(client, message):
+        await message.reply("Only administrators can use this command.")
+        return
+
+    try:
+        await message.delete()
+        members = await tagger.process_members(client, message.chat.id)
+
+        for i in range(0, len(members), tagger.batch_size):
+            batch = members[i:i + tagger.batch_size]
+            await tagger.send_mentions(client, message, batch, message.message_thread_id)
+
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+
+
+@Bot.on_message(filters.channel & (filters.text | filters.media))
+async def edit_channel_messages_and_media(client: Bot, message: Message):
+    try:
+        if message.chat.id not in [CHANNEL1, CHANNEL2]:
+            return
+        # Extract current message text
+        text = message.text or message.caption or ""
+
+        # Append "#nma" if it's not already included
+        if "#NMA" not in text:
+            updated_text = f"{text}\n\n#NMA"
+
+            if message.text:
+                # Edit text message
+                await message.edit_text(updated_text)
+            elif message.caption or message.media:
+                # Edit media message with a caption
+                await message.edit_caption(updated_text)
+
+    except Exception as e:
+        logger.error(f"Error editing channel message: {str(e)}")
