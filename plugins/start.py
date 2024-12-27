@@ -13,6 +13,7 @@ import yt_dlp
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from pyrogram import filters
+from pyrogram.errors import FloodWait
 from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
 
 from config import YT_API, CUSTOM_MESSAGE, CHANNEL1, CHANNEL2, GROUP1, GROUP2
@@ -408,8 +409,16 @@ async def tag_every_user(client: Bot, message: Message):
         members = await tagger.process_members(client, message.chat.id)
 
         for i in range(0, len(members), tagger.batch_size):
+
             batch = members[i:i + tagger.batch_size]
-            await tagger.send_mentions(client, message, batch, message.message_thread_id)
+
+            try:
+                await tagger.send_mentions(client, message, batch, message.message_thread_id)
+            except FloodWait as e:
+                await asyncio.sleep(e.value)
+                await tagger.send_mentions(client, message, batch, message.message_thread_id)
+            except Exception as e:
+                logger.error(f"Error sending to user : {str(e)}")
 
     except Exception as e:
         logger.error(f"Error: {str(e)}")
