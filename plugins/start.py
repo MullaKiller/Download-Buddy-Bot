@@ -343,15 +343,15 @@ async def download_command(client: Bot, message: Message):
     if message.chat.id not in [CHANNEL1, CHANNEL2, GROUP1, GROUP2]:
         return
 
-    await message.delete()
-
     downloader = MediaDownloader()
     url = message.text
 
     if downloader.SUPPORTED_PLATFORMS["twitter"] == downloader.validate_url(url):
+        await message.delete()
         await downloader.download_twitter_video_audio(message, url)
 
     elif downloader.SUPPORTED_PLATFORMS["instagram"] == downloader.validate_url(url):
+        await message.delete()
         await downloader.download_instagram_post_and_reels(message, url)
 
 
