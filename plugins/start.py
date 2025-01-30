@@ -16,10 +16,10 @@ from pyrogram import filters
 from pyrogram.errors import FloodWait
 from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
 
-from config import YT_API, CUSTOM_MESSAGE, CHANNEL1, CHANNEL2, GROUP1, GROUP2
+from config import CUSTOM_MESSAGE, CHANNEL1, CHANNEL2, EMBEDEZ_API_KEY
 from plugins.bot import Bot
-from plugins.utils.MemberTagger import MemberTagger
 from plugins.utils.logger import get_logger
+from plugins.utils.utility import MemberTagger
 
 logger = get_logger(__name__)
 
@@ -43,7 +43,7 @@ class MediaDownloader:
     def __init__(self):
         self.OUTPUT_DIR.mkdir(exist_ok=True)
         self._last_progress_update = {}
-        self.api_key = YT_API
+        self.api_key = EMBEDEZ_API_KEY
         self.youtube_service = googleapiclient.discovery.build(
             "youtube", "v3", developerKey=self.api_key
         )
@@ -341,68 +341,6 @@ class MediaDownloader:
                      if re.match(platform.pattern, url)), None)
 
 
-@Bot.on_message(filters.text & (filters.group | filters.channel) & ~filters.command(["audio", "alls"]))
-async def download_command(client: Bot, message: Message):
-
-    if message.chat.id not in [CHANNEL1, CHANNEL2, GROUP1, GROUP2]:
-        return
-
-    downloader = MediaDownloader()
-    url = message.text
-
-    if downloader.SUPPORTED_PLATFORMS["twitter"] == downloader.validate_url(url):
-        await message.delete()
-        await downloader.download_twitter_video_audio(message, url,
-                                                      is_channel=message.chat.id == CHANNEL1 or message.chat.id == CHANNEL2)
-
-    elif downloader.SUPPORTED_PLATFORMS["instagram"] == downloader.validate_url(url):
-        await message.delete()
-        await downloader.download_instagram_post_and_reels(message, url,
-                                                           is_channel=message.chat.id == CHANNEL1 or message.chat.id == CHANNEL2)
-
-
-@Bot.on_message((filters.group | filters.channel) & filters.command("audio"))
-async def download_audio_command(client: Bot, message: Message):
-    if message.chat.id not in [CHANNEL1, CHANNEL2, GROUP1, GROUP2]:
-        return
-
-    try:
-        await message.delete()
-        # Extract URL
-        if len(message.text.split()) > 1:
-            url = message.text.split(maxsplit=1)[1].strip()
-        elif message.reply_to_message and message.reply_to_message.text:
-            url = message.reply_to_message.text.strip()
-        else:
-            await message.reply_text("Please provide a URL or reply to a message containing a URL")
-            await asyncio.sleep(15)
-            return
-
-        downloader = MediaDownloader()
-        platform = downloader.validate_url(url)
-
-        if not platform:
-            await message.reply_text("Invalid URL. Please provide a valid YouTube, Twitter, or Instagram URL")
-            await asyncio.sleep(15)
-            return
-
-        if platform == downloader.SUPPORTED_PLATFORMS["twitter"]:
-            await downloader.download_twitter_video_audio(message, url, "audio",
-                                                          is_channel=message.chat.id == CHANNEL1 or message.chat.id == CHANNEL2)
-
-        elif platform == downloader.SUPPORTED_PLATFORMS["instagram"] and "/reel/" in url:
-            await downloader.download_twitter_video_audio(message, url, "audio",
-                                                          is_channel=message.chat.id == CHANNEL1 or message.chat.id == CHANNEL2)
-        else:
-            await message.reply_text("This type of content cannot be converted to audio")
-            await asyncio.sleep(15)
-
-    except Exception as e:
-        logger.error(f"Error in audio command: {str(e)}")
-        await message.reply_text(f"Error processing audio command: {str(e)}")
-        await asyncio.sleep(15)
-
-
 @Bot.on_message(filters.group & filters.command("alls") & filters.reply)
 async def tag_every_user(client: Bot, message: Message):
     tagger = MemberTagger()
@@ -439,6 +377,7 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
         # Extract current message text
         text = message.text or message.caption or ""
 
+        await asyncio.sleep(5)
         # Append "#nma" if it's not already included
         if "#NMA" not in text:
             updated_text = f"{text}\n\n#NMA"
@@ -446,7 +385,7 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
             if message.text:
                 # Edit text message
                 await message.edit_text(updated_text)
-            elif message.caption or message.media:
+            elif message.caption or not message.media_group_id:
                 # Edit media message with a caption
                 await message.edit_caption(updated_text)
 

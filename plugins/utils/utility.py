@@ -1,4 +1,5 @@
 import asyncio
+import random
 from typing import List
 
 from pyrogram.enums import ChatMemberStatus
@@ -44,3 +45,19 @@ class MemberTagger:
             if not member.user.is_bot and not member.user.is_deleted:
                 members.append(self.create_mention(member))
         return members
+
+
+async def random_reactions(client: Bot, message: Message):
+    # List of emojis to use as reactions
+    reactions = ["👍", "❤️", "🔥", "🥰", "👏", "🎉", "🤩", "😁", "🤔", "🤯", "🤬", "😢", "🤮", "💩", "🙏", "👌", "🕊️", "🤡", "🥱",
+                 "🥴", "😍", "🐳", "❤️‍🔥", "🌚", "🌭", "💯", "🤣", "⚡️", "🍌", "🎃", "🎄", "☃️", "🎋", "🎊"]
+
+    # Choose one random reaction
+    random_reaction = random.choice(reactions)
+    await asyncio.sleep(2)
+    # Use it in your code
+    await client.send_reaction(
+        message_id=message.id,
+        chat_id=message.chat.id,
+        emoji=random_reaction
+    )

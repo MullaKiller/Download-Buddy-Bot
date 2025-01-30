@@ -4,6 +4,9 @@ TgCrypto
 pyromod
 python-dotenv
 Pyrogram
+bs4
+requests
+apscheduler
 # --- For-Database ------------ #
 dnspython
 # --- For-Web-Response ------- #
@@ -14,6 +17,8 @@ shortzy
 aiohttp
 aiofiles
 asyncio
+git+https://github.com/yt-dlp/yt-dlp/
+
 # --- Time zone ------- #
 pytz
 yt-dlp
@@ -21,3 +26,4 @@ requests
 ffmpeg-python
 instaloader
 google-api-python-client
+ddinsta
