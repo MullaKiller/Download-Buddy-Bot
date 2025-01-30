@@ -3,9 +3,13 @@ import random
 from typing import List
 
 from pyrogram.enums import ChatMemberStatus
+from pyrogram.errors import ReactionInvalid
 from pyrogram.types import Message
 
 from plugins.bot import Bot
+from plugins.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class MemberTagger:
@@ -47,10 +51,21 @@ class MemberTagger:
         return members
 
 
-def random_emoji():
-    # List of emojis to use as reactions
-    reactions_emoji = ["👍", "❤️", "🔥", "🥰", "👏", "🎉", "🤩", "😁", "🤔", "🤯", "🤬", "😢", "🤮", "💩", "🙏", "👌", "🕊️", "🤡", "🥱",
-                       "🥴", "😍", "🐳", "❤️‍🔥", "🌚", "🌭", "💯", "🤣", "⚡️", "🍌", "🎃", "🎄", "☃️", "🎋", "🎊"]
+async def random_emoji_reaction(client: Bot, message: Message):
+    try:
+        # List of emojis to use as reactions
+        reactions_emoji = [
+            "😭", "😘", "💩", "👍", "👎", "❤️", "🔥", "👏", "😆", "🤔", "🍿", "😱", "🤬", "😞", "🎉", "🤩",
+            "🤮", "🙏", "👌", "🕊️", "🤡", "🤭", "🥴", "😍", "🐳", "❤️‍🔥", "🌚", "🌭", "💯", "🤣", "⚡️", "🍌",
+            "🏆", "💔", "😠", "😐", "🍓", "🥂", "💋", "🖕", "😈", "🥱", "🤓", "👻", "👨‍💻", "👀", "🎃", "🙈",
+            "😇", "😨", "🤝", "✍️", "🤗", "🫡", "🎅", "🎄", "☃️", "💅", "😜", "🗿", "🆒", "💘", "🙊", "🦄",
+            "😘", "💊", "🙈", "😎", "👾", "🤷‍♂️", "🤷‍♀️", "🤷"
+        ]
 
-    # Choose one random reaction
-    return random.choice(reactions_emoji)
+        # Choose one random reaction
+        emoji = random.choice(reactions_emoji)
+        await client.send_reaction(message_id=message.id, chat_id=message.chat.id, emoji=emoji)
+    except ReactionInvalid:
+        pass
+    except Exception as e:
+        logger.error(f"Set reaction failed : {str(e)}")

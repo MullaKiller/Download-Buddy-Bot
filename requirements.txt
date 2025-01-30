@@ -5,7 +5,6 @@ pyromod
 python-dotenv
 Pyrogram
 # --- For-Web-Response ------- #
-pytz
 requests
 aiohttp
 # --- Time zone ------- #
