@@ -2,6 +2,7 @@ import asyncio
 import random
 from typing import List
 
+from pyrogram import Client
 from pyrogram.enums import ChatMemberStatus
 from pyrogram.errors import ReactionInvalid
 from pyrogram.types import Message
@@ -51,7 +52,7 @@ class MemberTagger:
         return members
 
 
-async def random_emoji_reaction(client: Bot, message: Message):
+async def random_emoji_reaction(client: Client, message: Message):
     try:
         # List of emojis to use as reactions
         reactions_emoji = [
@@ -65,7 +66,8 @@ async def random_emoji_reaction(client: Bot, message: Message):
         # Choose one random reaction
         emoji = random.choice(reactions_emoji)
         await client.send_reaction(message_id=message.id, chat_id=message.chat.id, emoji=emoji)
-    except ReactionInvalid:
+    except ReactionInvalid as e:
+        print(f"Error ReactionInvalid : {str(e)}")
         pass
     except Exception as e:
         logger.error(f"Set reaction failed : {str(e)}")

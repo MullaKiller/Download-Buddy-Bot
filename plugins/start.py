@@ -6,6 +6,7 @@ from pyrogram.types import Message
 
 from config import CHANNEL1, CHANNEL2
 from plugins.bot import Bot
+from plugins.utils.fake_reaction import run_all_bots
 from plugins.utils.logger import get_logger
 from plugins.utils.utility import MemberTagger, random_emoji_reaction
 
@@ -377,6 +378,8 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
             elif message.caption or not message.media_group_id:
                 # Edit media message with a caption
                 await message.edit_caption(updated_text)
+
         await random_emoji_reaction(client, message)
+        await run_all_bots(message)
     except Exception as e:
         logger.error(f"Error editing channel message: {str(e)}")

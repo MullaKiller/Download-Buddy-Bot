@@ -1,0 +1,133 @@
+import asyncio
+
+from pyrogram import Client
+from pyrogram.types import Message
+
+from plugins.utils.logger import get_logger
+from plugins.utils.utility import random_emoji_reaction
+
+logger = get_logger(__name__)
+
+
+class ChannelBotManager:
+    def __init__(self):
+        self.bots = [
+            {
+                "name": "Contribution_bot",
+                "client": Client(
+                    "Bot0",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7589544571:AAHvSmvN0lpOy5jbtqm7MS-85SYw18e93WE"
+                )
+            },
+            {
+                "name": "Samosa1_bot",
+                "client": Client(
+                    "Bot1",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7645924051:AAHjbLQ4fm0ErdECl403nBhOxw4kNzn1alQ"
+                )
+            },
+            {
+                "name": "Samosa2_bot",
+                "client": Client(
+                    "Bot2",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7834601337:AAEFGpOKSpy-chZFT0YFLX2IX1inw-CBFLg"
+                )
+            },
+            {
+                "name": "Samosa3_bot",
+                "client": Client(
+                    "Bot3",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7728030809:AAFgcs1Tb0yT7SIMg04k7cFT6MNrDoUXZa8"
+                )
+            },
+            {
+                "name": "Samosa4_bot",
+                "client": Client(
+                    "Bot4",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7558468897:AAEX2KOaCVHts2-7i1NtjL4F9sZ614OZECU"
+                )
+            },
+            {
+                "name": "Samosa5_bot",
+                "client": Client(
+                    "Bot5",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7580912385:AAG-Lrz2DUDFZenbRP80AdsSR7Z995NXRLE"
+                )
+            },
+            {
+                "name": "OLD NMA Content bot",
+                "client": Client(
+                    "Bot6",
+                    api_id=20579212,
+                    api_hash="4861e861bffd7d533db630c1b941df72",
+                    bot_token="7317356373:AAG4nLgjPgkmcVeVGeNJFFfXPyYRMMOjI5Q"
+                )
+            }
+        ]
+        self.started_bots = []
+
+    async def start_bot(self, bot):
+        """Start a single bot if not already started"""
+        if bot not in self.started_bots:
+            try:
+                await bot["client"].start()
+                self.started_bots.append(bot)
+                logger.info(f"{bot['name']} started successfully")
+            except Exception as e:
+                logger.error(f"Error starting {bot['name']}: {e}")
+                raise
+
+    async def stop_bot(self, bot):
+        """Stop a single bot"""
+        if bot in self.started_bots:
+            try:
+                await bot["client"].stop()
+                self.started_bots.remove(bot)
+                logger.info(f"{bot['name']} stopped successfully")
+            except Exception as e:
+                logger.error(f"Error stopping {bot['name']}: {e}")
+
+    async def give_reaction(self, bot, message):
+        """Give reaction with a single bot"""
+        try:
+            await random_emoji_reaction(bot["client"], message)
+            logger.info(f"{bot['name']} gave reaction successfully")
+        except Exception as e:
+            logger.error(f"Error giving reaction with {bot['name']}: {e}")
+
+
+# Create a single instance
+bot_manager = ChannelBotManager()
+
+
+async def run_all_bots(message: Message):
+    """Main function to handle all bot reactions"""
+    try:
+        # Start bots and give reactions concurrently
+        tasks = []
+        for bot in bot_manager.bots:
+            await bot_manager.start_bot(bot)
+            tasks.append(asyncio.create_task(bot_manager.give_reaction(bot, message)))
+
+        # Wait for all reactions to complete
+        await asyncio.gather(*tasks)
+
+    except Exception as e:
+        logger.error(f"Error in run_all_bots: {e}")
+
+    finally:
+        # Clean up: stop all bots
+        for bot in bot_manager.started_bots[:]:  # Create a copy of the list to iterate
+            await bot_manager.stop_bot(bot)
