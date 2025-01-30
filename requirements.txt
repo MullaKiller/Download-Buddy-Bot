@@ -1,8 +1,9 @@
 # --- For-Bot-Working --------- #
+pyrofork
 TgCrypto
+pyromod
 python-dotenv
 Pyrogram
-requests
 # --- For-Web-Response ------- #
 pytz
 requests

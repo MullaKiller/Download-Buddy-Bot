@@ -47,17 +47,10 @@ class MemberTagger:
         return members
 
 
-async def random_reactions(client: Bot, message: Message):
+def random_emoji():
     # List of emojis to use as reactions
-    reactions = ["👍", "❤️", "🔥", "🥰", "👏", "🎉", "🤩", "😁", "🤔", "🤯", "🤬", "😢", "🤮", "💩", "🙏", "👌", "🕊️", "🤡", "🥱",
-                 "🥴", "😍", "🐳", "❤️‍🔥", "🌚", "🌭", "💯", "🤣", "⚡️", "🍌", "🎃", "🎄", "☃️", "🎋", "🎊"]
+    reactions_emoji = ["👍", "❤️", "🔥", "🥰", "👏", "🎉", "🤩", "😁", "🤔", "🤯", "🤬", "😢", "🤮", "💩", "🙏", "👌", "🕊️", "🤡", "🥱",
+                       "🥴", "😍", "🐳", "❤️‍🔥", "🌚", "🌭", "💯", "🤣", "⚡️", "🍌", "🎃", "🎄", "☃️", "🎋", "🎊"]
 
     # Choose one random reaction
-    random_reaction = random.choice(reactions)
-    await asyncio.sleep(2)
-    # Use it in your code
-    await client.send_reaction(
-        message_id=message.id,
-        chat_id=message.chat.id,
-        emoji=random_reaction
-    )
+    return random.choice(reactions_emoji)

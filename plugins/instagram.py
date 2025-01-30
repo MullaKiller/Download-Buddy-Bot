@@ -1,5 +1,3 @@
-import json
-
 import requests
 from pyrogram import filters
 from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
@@ -7,7 +5,7 @@ from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
 from config import CUSTOM_MESSAGE, EMBEDEZ_API_KEY
 from plugins.bot import Bot
 from plugins.utils.logger import get_logger
-from plugins.utils.utility import random_reactions
+from plugins.utils.utility import random_emoji
 
 logger = get_logger(__name__)
 
@@ -32,7 +30,7 @@ async def filter_caption(caption: str) -> str:
 
     # Join the lines back together
     final_text = '\n'.join(cleaned_captions)
-    return f"{final_text}\n\n{CUSTOM_MESSAGE}" if len(final_text) < 1024 else ""
+    return f"{final_text}\n\n{CUSTOM_MESSAGE}" if len(final_text) < 1000 else ""
 
 
 @Bot.on_message(filters.regex(r'https?://.*instagram[^\s]+') & filters.incoming)
@@ -43,8 +41,8 @@ async def instagram(client: Bot, message: Message):
         api_url = f"https://embedez.com/api/v1/providers/combined?q={url}"
         response = requests.get(api_url, headers=header)
 
-        logger.info(f"embedez api connected succesfully!")
         if response.status_code == 200:
+            logger.info("embedez API connected successfully!")
             data = response.json()
             # print(json.dumps(data, indent=4))
             content = data['data']['content']
@@ -66,15 +64,20 @@ async def instagram(client: Bot, message: Message):
                     elif media['type'] == "video":
                         media_group.append(InputMediaVideo(media["source"]["url"]))
 
-            media_group[0].caption = caption
-            message_list = await message.reply_media_group(media_group)
-            await random_reactions(client, message_list[0])
+            if media_group:
+                media_group[0].caption = caption
+                message_list = await message.reply_media_group(media_group)
+                await client.send_reaction(chat_id=message.chat.id, message_id=message_list[0].id, emoji=random_emoji())
+                logger.info(f"Successfully posted media group for {url}")
+            else:
+                await message.reply_text("No media found in the Instagram post.")
+
         else:
             await message.reply_text(
                 "I only download public and non-adult photos and videos🫥\n Join @nationalMutthal !")
 
     except Exception as e:
-        await message.reply_text(f"Something went wrong!😑\n{url}\nJoin @nationalMutthal !")
-        logger.error(f"Error: {str(e)}")
+        await message.reply_text(f"Something went wrong while processing your request {url}.")
+        logger.error(f"Error processing Instagram URL {url}: {str(e)}")
     finally:
         await message.reply_text("https://t.me/nationalMutthal/321")
