@@ -1,29 +1,17 @@
 import asyncio
-import re
-import shutil
-from dataclasses import dataclass
-from datetime import datetime
-from functools import partial
-from pathlib import Path
-from typing import Optional
 
-import googleapiclient
-import instaloader
-import yt_dlp
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 from pyrogram import filters
 from pyrogram.errors import FloodWait
-from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
+from pyrogram.types import Message
 
-from config import CUSTOM_MESSAGE, CHANNEL1, CHANNEL2, EMBEDEZ_API_KEY
+from config import CHANNEL1, CHANNEL2
 from plugins.bot import Bot
 from plugins.utils.logger import get_logger
 from plugins.utils.utility import MemberTagger
 
 logger = get_logger(__name__)
 
-
+'''
 @dataclass
 class Platform:
     name: str
@@ -339,6 +327,7 @@ class MediaDownloader:
     def validate_url(self, url: str) -> Optional[Platform]:
         return next((platform for platform in self.SUPPORTED_PLATFORMS.values()
                      if re.match(platform.pattern, url)), None)
+'''
 
 
 @Bot.on_message(filters.group & filters.command("alls") & filters.reply)
