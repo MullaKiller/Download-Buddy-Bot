@@ -39,6 +39,7 @@ async def filter_caption(caption: str) -> str:
 async def instagram(client: Bot, message: Message):
     try:
         url = message.text
+        await message.delete()
         api_url = f"https://embedez.com/api/v1/providers/combined?q={url}"
         response = requests.get(api_url, headers=header)
 
@@ -72,9 +73,8 @@ async def instagram(client: Bot, message: Message):
             await message.reply_text(
                 "I only download public and non-adult photos and videos🫥\n Join @nationalMutthal !")
 
-        await message.delete()
     except Exception as e:
-        await message.reply_text("Something went wrong!😑\n Join @nationalMutthal !")
+        await message.reply_text(f"Something went wrong!😑\n{url}\nJoin @nationalMutthal !")
         logger.error(f"Error: {str(e)}")
     finally:
         await message.reply_text("https://t.me/nationalMutthal/321")

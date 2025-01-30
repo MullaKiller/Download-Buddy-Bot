@@ -7,7 +7,7 @@ from pyrogram.types import Message
 from config import CHANNEL1, CHANNEL2
 from plugins.bot import Bot
 from plugins.utils.logger import get_logger
-from plugins.utils.utility import MemberTagger
+from plugins.utils.utility import MemberTagger, random_reactions
 
 logger = get_logger(__name__)
 
@@ -377,6 +377,6 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
             elif message.caption or not message.media_group_id:
                 # Edit media message with a caption
                 await message.edit_caption(updated_text)
-
+        await random_reactions(client, message)
     except Exception as e:
         logger.error(f"Error editing channel message: {str(e)}")
