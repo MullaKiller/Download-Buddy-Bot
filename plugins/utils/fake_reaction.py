@@ -13,6 +13,15 @@ class ChannelBotManager:
     def __init__(self):
         self.bots = [
             {
+                "name": "OLD NMA Content bot",
+                "client": Client(
+                    "Bot00",
+                    api_id=20579212,
+                    api_hash="4861e861bffd7d533db630c1b941df72",
+                    bot_token="7317356373:AAG4nLgjPgkmcVeVGeNJFFfXPyYRMMOjI5Q"
+                )
+            },
+            {
                 "name": "Contribution_bot",
                 "client": Client(
                     "Bot0",
@@ -21,6 +30,7 @@ class ChannelBotManager:
                     bot_token="7589544571:AAHvSmvN0lpOy5jbtqm7MS-85SYw18e93WE"
                 )
             },
+
             {
                 "name": "Samosa1_bot",
                 "client": Client(
@@ -67,14 +77,41 @@ class ChannelBotManager:
                 )
             },
             {
-                "name": "OLD NMA Content bot",
+                "name": "Samosa6_bot",
                 "client": Client(
                     "Bot6",
-                    api_id=20579212,
-                    api_hash="4861e861bffd7d533db630c1b941df72",
-                    bot_token="7317356373:AAG4nLgjPgkmcVeVGeNJFFfXPyYRMMOjI5Q"
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7702846467:AAG42dWItgfMdGbK8p4J3x8CA84jlQSTeWY"
                 )
-            }
+            },
+            {
+                "name": "Samosa7_bot",
+                "client": Client(
+                    "Bot7",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7961946749:AAGXuTcdkcslLZXR59dzWYP_5h7e-x1UoNY"
+                )
+            },
+            {
+                "name": "Samosa8_bot",
+                "client": Client(
+                    "Bot8",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7719585732:AAE_ecgmYRjRBQqhEG-hTRnWLRcbtXbDDMM"
+                )
+            },
+            {
+                "name": "Samosa9_bot",
+                "client": Client(
+                    "Bot9",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7538616318:AAEBSFBI-9iB_No1EOGAkOcL4SqbxrzTAPE"
+                )
+            },
         ]
         self.started_bots = []
 
@@ -102,6 +139,7 @@ class ChannelBotManager:
     async def give_reaction(self, bot, message):
         """Give reaction with a single bot"""
         try:
+            await asyncio.sleep(5)
             await random_emoji_reaction(bot["client"], message)
             logger.info(f"{bot['name']} gave reaction successfully")
         except Exception as e:

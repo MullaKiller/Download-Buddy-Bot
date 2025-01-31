@@ -1,4 +1,5 @@
 import asyncio
+import re
 
 from pyrogram import filters
 from pyrogram.errors import FloodWait
@@ -359,18 +360,30 @@ async def tag_every_user(client: Bot, message: Message):
         logger.error(f"Error: {str(e)}")
 
 
-@Bot.on_message(filters.channel & (filters.text | filters.media))
+@Bot.on_message(filters.channel)
 async def edit_channel_messages_and_media(client: Bot, message: Message):
     try:
+
+        # Reactions methods
+        await random_emoji_reaction(client, message)
+        await run_all_bots(message)
+
         if message.chat.id not in [CHANNEL1, CHANNEL2]:
             return
         # Extract current message text
         text = message.text or message.caption or ""
 
+        # Regex to check if text contains only emojis
+        emoji_pattern = re.compile(r'^[\U0001F300-\U0001F6FF\U0001F900-\U0001F9FF\U0001F1E6-\U0001F1FF\s]+$')
+
+        if emoji_pattern.fullmatch(text.strip()):
+            return  # Ignore messages that contain only emojis
+
         await asyncio.sleep(5)
+
         # Append "#nma" if it's not already included
-        if "#NMA" not in text:
-            updated_text = f"{text}\n\n#NMA"
+        if "#NMA" not in text and message.chat.id == CHANNEL1:
+            updated_text = f"{text}\n\n#NMA #General"
 
             if message.text:
                 # Edit text message
@@ -379,7 +392,15 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
                 # Edit media message with a caption
                 await message.edit_caption(updated_text)
 
-        await random_emoji_reaction(client, message)
-        await run_all_bots(message)
+        if "#NMA" not in text and message.chat.id == CHANNEL2:
+            updated_text = f"{text}\n\n#NMA #Content"
+
+            if message.text:
+                # Edit text message
+                await message.edit_text(updated_text)
+            elif message.caption or not message.media_group_id:
+                # Edit media message with a caption
+                await message.edit_caption(updated_text)
+
     except Exception as e:
         logger.error(f"Error editing channel message: {str(e)}")
