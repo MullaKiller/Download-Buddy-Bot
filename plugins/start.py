@@ -505,7 +505,7 @@ async def load_exist_file_if_present(file_name: str) -> List:
     try:
         file_path = os.path.abspath(f"plugins/{file_name}.json")
         if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
+            logger.error(f"File not found : {file_path}")
             return []
 
         with open(file_path, 'r') as json_file:
