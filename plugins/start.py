@@ -416,42 +416,102 @@ async def send_videos(client: Bot, message: Message):
         videos_data = await load_exist_file_if_present(file_name="desi_site_videos_data")
         logger.info("send json videos data to telegram!")
         logger.info(f"len : {len(videos_data)}")
+
+        failed_videos = []
         for video in videos_data:
             try:
                 await send_single(client, message, video)
-                logger.info(f"Sent {video} successfully!")
+                logger.info(f"Sent {video['title']} successfully!")
+                # Add a longer delay between videos to avoid rate limiting
+                await asyncio.sleep(2)
             except Exception as e:
-                logger.warning(f"Retring this video : {video}\n{str(e)}")
-                await send_single(client, message, video)
-        logger.info("Sent all videos from json file")
+                logger.error(f"Failed to send video {video['title']}: {str(e)}")
+                failed_videos.append(video)
+                # Continue with next video instead of stopping
+                continue
+
+        if failed_videos:
+            logger.warning(f"Failed to send {len(failed_videos)} videos. Retrying...")
+            logger.warning(f"{failed_videos}")
+            for video in failed_videos:
+                try:
+                    await send_single(client, message, video)
+                    logger.info(f"Retry successful for {video['title']}")
+                    await asyncio.sleep(2)
+                except Exception as e:
+                    logger.error(f"Retry failed for {video['title']}: {str(e)}")
+
+        logger.info("Finished processing all videos")
+        await client.send_message(
+            chat_id=message.chat.id,
+            text=f"Process completed.\nSuccessfully sent: {len(videos_data) - len(failed_videos)}\nFailed: {len(failed_videos)}"
+        )
+
     except Exception as e:
-        print(f"Error in start command , : {str(e)}")
+        logger.error(f"Error in send_videos command: {str(e)}")
+        await client.send_message(
+            chat_id=message.chat.id,
+            text=f"An error occurred while processing videos: {str(e)}"
+        )
 
 
 async def send_single(client: Bot, message: Message, video):
-    try:
-        if video['title'] and video['link']:
-            await client.send_video(video=video['link'], caption=video['title'], chat_id=message.chat.id)
-            await asyncio.sleep(0.5)
-    except FloodWait as e:
-        await asyncio.sleep(e.value+5)
-        await client.send_video(video=video['link'], caption=video['title'], chat_id=message.chat.id)
-    except (WebpageCurlFailed, WebpageMediaEmpty) as e:
+    max_retries = 3
+    current_retry = 0
+
+    while current_retry < max_retries:
         try:
-            await client.send_message(chat_id=message.chat.id,text=f"Title : {video['title']}\n\nLink : {video['link']}")
+            if not video.get('link') or not video.get('title'):
+                logger.warning(f"Missing link or title in video data: {video}")
+                return
+
+            await client.send_video(
+                video=video['link'],
+                caption=video['title'],
+                chat_id=message.chat.id
+            )
+            return
+
         except FloodWait as e:
-            await asyncio.sleep(e.value + 5)
-            await client.send_message(chat_id=message.chat.id,text=f"Title : {video['title']}\n\nLink : {video['link']}")
-    except Exception as e:
-        print(f"Something went wrong: {str(e)}")
-        raise
+            wait_time = e.value + 5
+            logger.warning(f"FloodWait detected, waiting for {wait_time} seconds")
+            await asyncio.sleep(wait_time)
+            current_retry += 1
+
+        except (WebpageCurlFailed, WebpageMediaEmpty) as e:
+            logger.warning(f"Media issue, sending as text message instead: {str(e)}")
+            try:
+                await client.send_message(
+                    chat_id=message.chat.id,
+                    text=f"Title: {video['title']}\n\nLink: {video['link']}"
+                )
+                return
+            except FloodWait as e:
+                wait_time = e.value + 5
+                logger.warning(f"FloodWait on text message, waiting for {wait_time} seconds")
+                await asyncio.sleep(wait_time)
+                current_retry += 1
+
+        except Exception as e:
+            logger.error(f"Error sending video {video['title']}: {str(e)}")
+            current_retry += 1
+            if current_retry < max_retries:
+                await asyncio.sleep(5)  # Wait before retry
+            else:
+                raise  # Re-raise if max retries reached
 
 
 async def load_exist_file_if_present(file_name: str) -> List:
     try:
         file_path = os.path.abspath(f"plugins/{file_name}.json")
-        with open(f"{file_path}", 'r') as json_file:
-            return json.load(json_file)
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            return []
+
+        with open(file_path, 'r') as json_file:
+            data = json.load(json_file)
+            logger.info(f"Successfully loaded {len(data)} videos from {file_path}")
+            return data
 
     except FileNotFoundError:
         return []
