@@ -1,8 +1,11 @@
 import asyncio
+import json
+import os
 import re
+from typing import List
 
 from pyrogram import filters
-from pyrogram.errors import FloodWait
+from pyrogram.errors import FloodWait, WebpageMediaEmpty
 from pyrogram.types import Message
 
 from config import CHANNEL1, CHANNEL2
@@ -360,16 +363,17 @@ async def tag_every_user(client: Bot, message: Message):
         logger.error(f"Error: {str(e)}")
 
 
-@Bot.on_message(filters.channel)
+# @Bot.on_message(filters.channel)
 async def edit_channel_messages_and_media(client: Bot, message: Message):
     try:
+
+        if message.chat.id not in [CHANNEL1, CHANNEL2]:
+            return
 
         # Reactions methods
         await random_emoji_reaction(client, message)
         await run_all_bots(message)
 
-        if message.chat.id not in [CHANNEL1, CHANNEL2]:
-            return
         # Extract current message text
         text = message.text or message.caption or ""
 
@@ -404,3 +408,55 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
 
     except Exception as e:
         logger.error(f"Error editing channel message: {str(e)}")
+
+
+@Bot.on_message(filters.channel & filters.command("custom_samosa"))
+async def send_videos(client: Bot, message: Message):
+    try:
+        videos_data = await load_exist_file_if_present(file_name="desi_site_videos_data")
+        logger.info("send json videos data to telegram!")
+        logger.info(f"len : {len(videos_data)}")
+        flag = True
+        for video in videos_data:
+            try:
+                if video['title'] == "Hot Punjabi bhabhi ki chut chudai":
+                    flag = True
+
+                if video['title'] and video['link'] and flag:
+                    await client.send_video(video=video['link'], caption=video['title'], chat_id=message.chat.id)
+                    await asyncio.sleep(1)
+
+            except FloodWait as e:
+                await asyncio.sleep(e.value)
+                await client.send_video(video=video['link'], caption=video['title'], chat_id=message.chat.id)
+            except Exception as e:
+                print(f"send as text : {str(e)}")
+                try:
+                    await client.send_message(chat_id=message.chat.id, text=f"Title : {video['title']}\n\nLink : {video['link']}")
+                except FloodWait as e:
+                    await asyncio.sleep(e.value)
+                    await client.send_message(chat_id=message.chat.id, text=f"Title : {video['title']}\n\nLink : {video['link']}")
+                except Exception as e:
+                    print(f"Inside double exception : {str(e)}")
+
+    except Exception as e:
+        print(f"Error in start command , : {str(e)}")
+
+
+async def load_exist_file_if_present(file_name: str) -> List:
+    try:
+        file_path = os.path.abspath(f"plugins/{file_name}.json")
+        with open(f"{file_path}", 'r') as json_file:
+            return json.load(json_file)
+
+    except FileNotFoundError:
+        return []
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON from {file_name}.json: {e}")
+        return []
+    except PermissionError as e:
+        print(f"Permission denied when trying to read {file_name}.json: {e}")
+        return []
+    except Exception as e:
+        print(f"Unexpected error reading {file_name}.json: {e}")
+        return []
