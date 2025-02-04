@@ -5,7 +5,7 @@ import re
 from typing import List
 
 from pyrogram import filters
-from pyrogram.errors import FloodWait, WebpageMediaEmpty
+from pyrogram.errors import FloodWait, WebpageMediaEmpty, WebpageCurlFailed
 from pyrogram.types import Message
 
 from config import CHANNEL1, CHANNEL2
@@ -416,31 +416,35 @@ async def send_videos(client: Bot, message: Message):
         videos_data = await load_exist_file_if_present(file_name="desi_site_videos_data")
         logger.info("send json videos data to telegram!")
         logger.info(f"len : {len(videos_data)}")
-        flag = True
         for video in videos_data:
             try:
-                if video['title'] == "Hot Punjabi bhabhi ki chut chudai":
-                    flag = True
-
-                if video['title'] and video['link'] and flag:
-                    await client.send_video(video=video['link'], caption=video['title'], chat_id=message.chat.id)
-                    await asyncio.sleep(1)
-
-            except FloodWait as e:
-                await asyncio.sleep(e.value)
-                await client.send_video(video=video['link'], caption=video['title'], chat_id=message.chat.id)
+                await send_single(client, message, video)
+                logger.info(f"Sent {video} successfully!")
             except Exception as e:
-                print(f"send as text : {str(e)}")
-                try:
-                    await client.send_message(chat_id=message.chat.id, text=f"Title : {video['title']}\n\nLink : {video['link']}")
-                except FloodWait as e:
-                    await asyncio.sleep(e.value)
-                    await client.send_message(chat_id=message.chat.id, text=f"Title : {video['title']}\n\nLink : {video['link']}")
-                except Exception as e:
-                    print(f"Inside double exception : {str(e)}")
-
+                logger.warning(f"Retring this video : {video}\n{str(e)}")
+                await send_single(client, message, video)
+        logger.info("Sent all videos from json file")
     except Exception as e:
         print(f"Error in start command , : {str(e)}")
+
+
+async def send_single(client: Bot, message: Message, video):
+    try:
+        if video['title'] and video['link']:
+            await client.send_video(video=video['link'], caption=video['title'], chat_id=message.chat.id)
+            await asyncio.sleep(0.5)
+    except FloodWait as e:
+        await asyncio.sleep(e.value+5)
+        await client.send_video(video=video['link'], caption=video['title'], chat_id=message.chat.id)
+    except (WebpageCurlFailed, WebpageMediaEmpty) as e:
+        try:
+            await client.send_message(chat_id=message.chat.id,text=f"Title : {video['title']}\n\nLink : {video['link']}")
+        except FloodWait as e:
+            await asyncio.sleep(e.value + 5)
+            await client.send_message(chat_id=message.chat.id,text=f"Title : {video['title']}\n\nLink : {video['link']}")
+    except Exception as e:
+        print(f"Something went wrong: {str(e)}")
+        raise
 
 
 async def load_exist_file_if_present(file_name: str) -> List:
