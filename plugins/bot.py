@@ -17,6 +17,7 @@ from config import (
     PORT,
 )
 from plugins import web_server
+from plugins.utils.fake_reaction import start_other_bots, stop_other_bots
 from plugins.utils.logger import get_logger
 
 
@@ -76,8 +77,9 @@ class Bot(Client):
             self.set_parse_mode(ParseMode.HTML)
             await self.setup_web_server()
 
-            self.LOGGER.info("Bot is running successfully!")
-
+            self.LOGGER.info("Bot0 is running successfully!")
+            await start_other_bots()
+            self.LOGGER.info("All the bots are started and running.")
         except Exception as e:
             self.LOGGER.error(f"Bot startup failed: {str(e)}")
             sys.exit(1)
@@ -86,6 +88,8 @@ class Bot(Client):
     async def stop(self, *args) -> None:
         try:
             await super().stop()
-            self.LOGGER.info("Bot stopped successfully.")
+            self.LOGGER.info("Bot0 stopped successfully.")
+            await stop_other_bots()
+            self.LOGGER.info("All the bots are stopped.")
         except Exception as e:
             self.LOGGER.error(f"Error while stopping bot: {str(e)}")

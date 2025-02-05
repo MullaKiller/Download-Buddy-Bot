@@ -123,7 +123,7 @@ class ChannelBotManager:
             {
                 "name": "OLD NMA Content bot",
                 "client": Client(
-                    "Bot14",
+                    "Bot13",
                     api_id=20579212,
                     api_hash="4861e861bffd7d533db630c1b941df72",
                     bot_token="7317356373:AAG4nLgjPgkmcVeVGeNJFFfXPyYRMMOjI5Q"
@@ -132,7 +132,7 @@ class ChannelBotManager:
             {
                 "name": "Contribution_bot",
                 "client": Client(
-                    "Bot15",
+                    "Bot14",
                     api_id=22999504,
                     api_hash="293765a6ae6fa5880fe8937a834d9126",
                     bot_token="7589544571:AAHvSmvN0lpOy5jbtqm7MS-85SYw18e93WE"
@@ -176,22 +176,38 @@ class ChannelBotManager:
 bot_manager = ChannelBotManager()
 
 
-async def run_all_bots(message: Message):
+async def start_other_bots():
     """Main function to handle all bot reactions"""
     try:
-        # Start bots and give reactions concurrently
-        tasks = []
+        # Start all other bots
         for bot in bot_manager.bots:
             await bot_manager.start_bot(bot)
+
+    except Exception as e:
+        logger.error(f"start all other bots error : {e}")
+
+    # finally:
+    #     # Clean up: stop all bots
+    #     for bot in bot_manager.started_bots[:]:  # Create a copy of the list to iterate
+    #         await bot_manager.stop_bot(bot)
+
+
+async def stop_other_bots():
+    try:
+        for bot in bot_manager.started_bots[:]:
+            await bot_manager.stop_bot(bot)
+    except Exception as e:
+        logger.error(f"stop all other bots error : {e}")
+
+
+async def other_bots_reactions(message: Message):
+    try:
+        tasks = []
+        for bot in bot_manager.bots:
             tasks.append(asyncio.create_task(bot_manager.give_reaction(bot, message)))
 
         # Wait for all reactions to complete
         await asyncio.gather(*tasks)
-
+        logger.info("Other bots gave reactions successfully!")
     except Exception as e:
-        logger.error(f"Error in run_all_bots: {e}")
-
-    finally:
-        # Clean up: stop all bots
-        for bot in bot_manager.started_bots[:]:  # Create a copy of the list to iterate
-            await bot_manager.stop_bot(bot)
+        logger.error(f"Other bots giving reaction failed : {str(e)}")
