@@ -363,7 +363,7 @@ async def tag_every_user(client: Bot, message: Message):
         logger.error(f"Error: {str(e)}")
 
 
-# @Bot.on_message(filters.channel)
+@Bot.on_message(filters.channel)
 async def edit_channel_messages_and_media(client: Bot, message: Message):
     try:
 
@@ -410,7 +410,7 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
         logger.error(f"Error editing channel message: {str(e)}")
 
 
-@Bot.on_message(filters.channel & filters.command("custom_samosa"))
+# @Bot.on_message(filters.channel & filters.command("custom_samosa"))
 async def send_videos(client: Bot, message: Message):
     try:
         videos_data = await load_exist_file_if_present(file_name="desi_site_videos_data")

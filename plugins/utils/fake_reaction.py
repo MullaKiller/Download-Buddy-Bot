@@ -13,25 +13,6 @@ class ChannelBotManager:
     def __init__(self):
         self.bots = [
             {
-                "name": "OLD NMA Content bot",
-                "client": Client(
-                    "Bot00",
-                    api_id=20579212,
-                    api_hash="4861e861bffd7d533db630c1b941df72",
-                    bot_token="7317356373:AAG4nLgjPgkmcVeVGeNJFFfXPyYRMMOjI5Q"
-                )
-            },
-            {
-                "name": "Contribution_bot",
-                "client": Client(
-                    "Bot0",
-                    api_id=22999504,
-                    api_hash="293765a6ae6fa5880fe8937a834d9126",
-                    bot_token="7589544571:AAHvSmvN0lpOy5jbtqm7MS-85SYw18e93WE"
-                )
-            },
-
-            {
                 "name": "Samosa1_bot",
                 "client": Client(
                     "Bot1",
@@ -110,6 +91,51 @@ class ChannelBotManager:
                     api_id=22999504,
                     api_hash="293765a6ae6fa5880fe8937a834d9126",
                     bot_token="7538616318:AAEBSFBI-9iB_No1EOGAkOcL4SqbxrzTAPE"
+                )
+            },
+            {
+                "name": "Samosa111_bot",
+                "client": Client(
+                    "Bot10",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7940274792:AAGm0gnsEvoSRzc_d7wBrOytkUdwds5tBWw"
+                )
+            },
+            {
+                "name": "Samosa12_bot",
+                "client": Client(
+                    "Bot11",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7862516536:AAF2oocU1hF5_xyxafHkfZvdJwVL9SydO2Q"
+                )
+            },
+            {
+                "name": "Samosa13_bot",
+                "client": Client(
+                    "Bot12",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="8148522810:AAHN5UFpIZSsVXHl_aaDOJZQwKV5g3HQ_AQ"
+                )
+            },
+            {
+                "name": "OLD NMA Content bot",
+                "client": Client(
+                    "Bot14",
+                    api_id=20579212,
+                    api_hash="4861e861bffd7d533db630c1b941df72",
+                    bot_token="7317356373:AAG4nLgjPgkmcVeVGeNJFFfXPyYRMMOjI5Q"
+                )
+            },
+            {
+                "name": "Contribution_bot",
+                "client": Client(
+                    "Bot15",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7589544571:AAHvSmvN0lpOy5jbtqm7MS-85SYw18e93WE"
                 )
             },
         ]
