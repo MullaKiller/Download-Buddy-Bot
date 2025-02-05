@@ -1,4 +1,5 @@
 import asyncio
+from typing import List
 
 from pyrogram import Client
 from pyrogram.types import Message
@@ -162,11 +163,11 @@ class ChannelBotManager:
             except Exception as e:
                 logger.error(f"Error stopping {bot['name']}: {e}")
 
-    async def give_reaction(self, bot, message):
+    async def give_reaction(self, bot, message, emoji):
         """Give reaction with a single bot"""
         try:
             await asyncio.sleep(5)
-            await random_emoji_reaction(bot["client"], message)
+            await random_emoji_reaction(bot["client"], message, emoji)
             logger.info(f"{bot['name']} gave reaction successfully")
         except Exception as e:
             logger.error(f"Error giving reaction with {bot['name']}: {e}")
@@ -200,11 +201,13 @@ async def stop_other_bots():
         logger.error(f"stop all other bots error : {e}")
 
 
-async def other_bots_reactions(message: Message):
+async def other_bots_reactions(message: Message, emojis: List):
     try:
         tasks = []
+        i = 0
         for bot in bot_manager.bots:
-            tasks.append(asyncio.create_task(bot_manager.give_reaction(bot, message)))
+            tasks.append(asyncio.create_task(bot_manager.give_reaction(bot, message, emojis[i % len(emojis)])))
+            i += 1
 
         # Wait for all reactions to complete
         await asyncio.gather(*tasks)

@@ -12,7 +12,7 @@ from config import CHANNEL1, CHANNEL2
 from plugins.bot import Bot
 from plugins.utils.fake_reaction import other_bots_reactions
 from plugins.utils.logger import get_logger
-from plugins.utils.utility import MemberTagger, random_emoji_reaction
+from plugins.utils.utility import MemberTagger, random_emoji_reaction, get_random_emoji
 
 logger = get_logger(__name__)
 
@@ -53,8 +53,8 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
             return
 
         # Reactions methods
-        await random_emoji_reaction(client, message)
-        await other_bots_reactions(message)
+        await random_emoji_reaction(client, message, emoji=get_random_emoji(max_emoji=1))
+        await other_bots_reactions(message, emojis=get_random_emoji(max_emoji=8))
 
         # Extract current message text
         text = message.text or message.caption or ""
