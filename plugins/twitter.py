@@ -7,7 +7,7 @@ from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
 from config import CUSTOM_MESSAGE, EMBEDEZ_API_KEY
 from plugins.bot import Bot
 from plugins.utils.logger import get_logger
-from plugins.utils.utility import random_emoji_reaction
+from plugins.utils.utility import random_emoji_reaction, get_random_emoji
 
 logger = get_logger(__name__)
 
@@ -68,7 +68,7 @@ async def instagram(client: Bot, message: Message):
             if media_group:
                 media_group[0].caption = caption
                 message_list = await message.reply_media_group(media_group)
-                await random_emoji_reaction(client, message_list[0])
+                await random_emoji_reaction(client, message_list[0],emoji=get_random_emoji(max_emoji=1))
                 logger.info(f"Successfully posted media group for {url}")
             else:
                 await message.reply_text("No media found in the Twitter post.")

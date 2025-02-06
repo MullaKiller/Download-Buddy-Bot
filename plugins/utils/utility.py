@@ -84,4 +84,3 @@ async def random_emoji_reaction(client: Client, message: Message, emoji):
                 logger.error(f"Something went wrong again and again ! : {str(e)}")
         except Exception as e:
             logger.error(f"Set reaction failed. Retrying again {retry} bot name : {client.name}")
-            # raise Exception(f"set reaction failed : {client.name}")
