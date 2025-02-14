@@ -7,7 +7,7 @@ import pytz
 from pyrogram import filters
 from pyrogram.types import Message
 
-from config import OWNER_ID
+from config import settings
 from plugins.bot import Bot
 from plugins.utils.logger import get_logger
 
@@ -56,7 +56,7 @@ async def schedule_daily_restart():
 
 
 # Handle manual restart command
-@Bot.on_message(filters.private & filters.command("restart") & filters.user(OWNER_ID))
+@Bot.on_message(filters.private & filters.command("restart") & filters.user(settings.OWNER_ID))
 async def restart_command(client: Bot, message: Message):
     status_msg = await message.reply_text(
         text="<i>Trying To Restarting.....</i>", quote=True

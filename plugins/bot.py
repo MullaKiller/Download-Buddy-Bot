@@ -8,14 +8,7 @@ from pyrogram import Client
 from pyrogram import utils
 from pyrogram.enums import ParseMode
 
-from config import (
-    API_HASH,
-    APP_ID,
-    TG_BOT_WORKERS,
-    TG_BOT_TOKEN,
-    OWNER_ID,
-    PORT,
-)
+from config import settings
 from plugins import web_server
 from plugins.utils.fake_reaction import start_other_bots, stop_other_bots
 from plugins.utils.logger import get_logger
@@ -42,11 +35,11 @@ class Bot(Client):
     def __init__(self):
         super().__init__(
             name="Bot",
-            api_hash=API_HASH,
-            api_id=APP_ID,
+            api_hash=settings.API_HASH,
+            api_id=settings.APP_ID,
             plugins={"root": "plugins"},
-            workers=TG_BOT_WORKERS,
-            bot_token=TG_BOT_TOKEN,
+            workers=settings.TG_BOT_WORKERS,
+            bot_token=settings.TG_BOT_TOKEN,
         )
         self.username: Optional[str] = None
         self.LOGGER = get_logger(__name__)
@@ -58,7 +51,7 @@ class Bot(Client):
             app = web.AppRunner(await web_server())
             await app.setup()
             bind_address = "0.0.0.0"
-            await web.TCPSite(app, bind_address, PORT).start()
+            await web.TCPSite(app, bind_address, settings.PORT).start()
         except Exception as e:
             self.LOGGER.error(f"Web server setup error: {str(e)}")
             raise BotInitError("Web server setup failed")
@@ -79,7 +72,7 @@ class Bot(Client):
             self.LOGGER.info("All the bots are started and running.")
 
             # Send startup notification
-            await self.send_message(chat_id=OWNER_ID, text="Bot has started!")
+            await self.send_message(chat_id=settings.OWNER_ID, text="Bot has started!")
         except Exception as e:
             self.LOGGER.error(f"Bot startup failed: {str(e)}")
             sys.exit(1)

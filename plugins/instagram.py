@@ -2,14 +2,14 @@ import requests
 from pyrogram import filters
 from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
 
-from config import CUSTOM_MESSAGE, EMBEDEZ_API_KEY
+from config import settings
 from plugins.bot import Bot
 from plugins.utils.logger import get_logger
 from plugins.utils.utility import random_emoji_reaction, get_random_emoji
 
 logger = get_logger(__name__)
 
-header = {"Authorization": f"Bearer {EMBEDEZ_API_KEY}"}
+header = {"Authorization": f"Bearer {settings.EMBEDEZ_API_KEY}"}
 
 
 # filtering caption removing unnecessary #hastags
@@ -30,7 +30,7 @@ async def filter_caption(caption: str) -> str:
 
     # Join the lines back together
     final_text = '\n'.join(cleaned_captions)
-    return f"{final_text}\n\n{CUSTOM_MESSAGE}" if len(final_text) < 1000 else ""
+    return f"{final_text}\n\n{settings.CUSTOM_MESSAGE}" if len(final_text) < 1000 else ""
 
 
 @Bot.on_message(filters.regex(r'https?://.*instagram[^\s]+') & filters.incoming)

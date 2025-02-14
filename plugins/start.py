@@ -6,22 +6,30 @@ from typing import List
 
 from pyrogram import filters
 from pyrogram.errors import FloodWait, WebpageMediaEmpty, WebpageCurlFailed
-from pyrogram.types import Message
+from pyrogram.types import Message, ReplyKeyboardMarkup
 
-from config import CHANNEL1, CHANNEL2, EMOJI, OWNER_ID, get_dot_env_values, update_env_value
+from config import settings
 from plugins.bot import Bot
-from plugins.restart import perform_restart
 from plugins.utils.fake_reaction import other_bots_reactions
 from plugins.utils.logger import get_logger
 from plugins.utils.utility import MemberTagger, random_emoji_reaction, get_random_emoji
 
+
+KEYBOARD = ReplyKeyboardMarkup(
+    [
+        ["/start", "/set_env"],
+    ],
+    resize_keyboard=True,  # Makes the keyboard smaller and neater
+    is_persistent=True  # Makes the keyboard persistent
+)
+
 logger = get_logger(__name__)
 
 
-@Bot.on_message(filters.private & filters.command("set_env") & filters.user(OWNER_ID))
-async def set_env_by_owner(client: Bot, message: Message):
+@Bot.on_message(filters.private & filters.command("set_env") & filters.user(settings.OWNER_ID))
+async def set_env(client: Bot, message: Message):
     try:
-        await message.reply(get_dot_env_values())
+        await message.reply(settings.get_all_values(), reply_markup=KEYBOARD)
 
         key = await ask_(client, message, "Enter the key name:")
 
@@ -36,10 +44,8 @@ async def set_env_by_owner(client: Bot, message: Message):
         value = "" if value.lower() == "empty" else value
 
         # Try updating .env and send confirmation
-        if update_env_value(key, value):  # Ensure this function is correctly defined
+        if settings.update_env_value(key, value):  # Ensure this function is correctly defined
             await message.reply(f"✅ Successfully set `{key}` to `{value}`.")
-            await message.reply(f"Server is Restarting")
-            await perform_restart()
         else:
             await message.reply("❌ Failed to update .env. Key might not exist.")
 
@@ -49,7 +55,7 @@ async def set_env_by_owner(client: Bot, message: Message):
 
 
 @Bot.on_message(filters.group & filters.command("alls") & filters.reply)
-async def tag_every_user(client: Bot, message: Message):
+async def alls(client: Bot, message: Message):
     tagger = MemberTagger()
 
     if not await tagger.is_admin(client, message):
@@ -80,7 +86,7 @@ async def tag_every_user(client: Bot, message: Message):
 async def edit_channel_messages_and_media(client: Bot, message: Message):
     try:
 
-        if message.chat.id in [CHANNEL1, CHANNEL2]:
+        if message.chat.id in [settings.CHANNEL1, settings.CHANNEL2]:
 
             # Reactions methods
             await random_emoji_reaction(client, message, emoji=get_random_emoji(max_emoji=1))
@@ -96,11 +102,11 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
             await asyncio.sleep(5)
 
             # Append "#nma" if it's not already included
-            if "#NMA" not in text and message.chat.id == CHANNEL1:
+            if "#NMA" not in text and message.chat.id == settings.CHANNEL1:
                 updated_text = f"{text}\n\n#NMA #General"
 
-                if EMOJI:
-                    await other_bots_reactions(message, emojis=EMOJI)
+                if settings.EMOJI:
+                    await other_bots_reactions(message, emojis=settings.EMOJI)
                 else:
                     await other_bots_reactions(message, emojis=get_random_emoji(max_emoji=8))
 
@@ -111,11 +117,11 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
                     # Edit media message with a caption
                     await message.edit_caption(updated_text)
 
-            if "#NMA" not in text and message.chat.id == CHANNEL2:
+            if "#NMA" not in text and message.chat.id == settings.CHANNEL2:
                 updated_text = f"{text}\n\n#NMA #Content"
 
-                if EMOJI:
-                    await other_bots_reactions(message, emojis=EMOJI)
+                if settings.EMOJI:
+                    await other_bots_reactions(message, emojis=settings.EMOJI)
                 else:
                     await other_bots_reactions(message, emojis=get_random_emoji(max_emoji=8))
 
