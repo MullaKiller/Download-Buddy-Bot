@@ -70,9 +70,6 @@ class Bot(Client):
             me = await self.get_me()
             self.username = me.username
 
-            # Send startup notification
-            await self.send_message(chat_id=OWNER_ID, text="Bot has started!")
-
             # Set parse mode and start web server
             self.set_parse_mode(ParseMode.HTML)
             await self.setup_web_server()
@@ -80,6 +77,9 @@ class Bot(Client):
             self.LOGGER.info("Bot0 is running successfully!")
             await start_other_bots()
             self.LOGGER.info("All the bots are started and running.")
+
+            # Send startup notification
+            await self.send_message(chat_id=OWNER_ID, text="Bot has started!")
         except Exception as e:
             self.LOGGER.error(f"Bot startup failed: {str(e)}")
             sys.exit(1)

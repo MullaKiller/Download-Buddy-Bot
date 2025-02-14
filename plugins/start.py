@@ -10,6 +10,7 @@ from pyrogram.types import Message
 
 from config import CHANNEL1, CHANNEL2, EMOJI, OWNER_ID, get_dot_env_values, update_env_value
 from plugins.bot import Bot
+from plugins.restart import perform_restart
 from plugins.utils.fake_reaction import other_bots_reactions
 from plugins.utils.logger import get_logger
 from plugins.utils.utility import MemberTagger, random_emoji_reaction, get_random_emoji
@@ -37,6 +38,8 @@ async def set_env_by_owner(client: Bot, message: Message):
         # Try updating .env and send confirmation
         if update_env_value(key, value):  # Ensure this function is correctly defined
             await message.reply(f"✅ Successfully set `{key}` to `{value}`.")
+            await message.reply(f"Server is Restarting")
+            await perform_restart()
         else:
             await message.reply("❌ Failed to update .env. Key might not exist.")
 
