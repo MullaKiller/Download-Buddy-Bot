@@ -8,13 +8,41 @@ from pyrogram import filters
 from pyrogram.errors import FloodWait, WebpageMediaEmpty, WebpageCurlFailed
 from pyrogram.types import Message
 
-from config import CHANNEL1, CHANNEL2
+from config import CHANNEL1, CHANNEL2, EMOJI, OWNER_ID, get_dot_env_values, update_env_value
 from plugins.bot import Bot
 from plugins.utils.fake_reaction import other_bots_reactions
 from plugins.utils.logger import get_logger
 from plugins.utils.utility import MemberTagger, random_emoji_reaction, get_random_emoji
 
 logger = get_logger(__name__)
+
+
+@Bot.on_message(filters.private & filters.command("set_env") & filters.user(OWNER_ID))
+async def set_env_by_owner(client: Bot, message: Message):
+    try:
+        await message.reply(get_dot_env_values())
+
+        key = await ask_(client, message, "Enter the key name:")
+
+        if not key:
+            return await message.reply("❌ Key name is required.")
+
+        value = await ask_(client, message, "Enter the value (type 'empty' for blank):")
+        if value is None:
+            return await message.reply("❌ No value provided.")
+
+        # Convert "empty" to an actual empty string
+        value = "" if value.lower() == "empty" else value
+
+        # Try updating .env and send confirmation
+        if update_env_value(key, value):  # Ensure this function is correctly defined
+            await message.reply(f"✅ Successfully set `{key}` to `{value}`.")
+        else:
+            await message.reply("❌ Failed to update .env. Key might not exist.")
+
+    except Exception as e:
+        print(f"Error in set_env_by_owner: {e}")
+        await message.reply("⚠️ An unexpected error occurred.")
 
 
 @Bot.on_message(filters.group & filters.command("alls") & filters.reply)
@@ -49,44 +77,51 @@ async def tag_every_user(client: Bot, message: Message):
 async def edit_channel_messages_and_media(client: Bot, message: Message):
     try:
 
-        if message.chat.id not in [CHANNEL1, CHANNEL2]:
-            return
+        if message.chat.id in [CHANNEL1, CHANNEL2]:
 
-        # Reactions methods
-        await random_emoji_reaction(client, message, emoji=get_random_emoji(max_emoji=1))
-        await other_bots_reactions(message, emojis=get_random_emoji(max_emoji=8))
+            # Reactions methods
+            await random_emoji_reaction(client, message, emoji=get_random_emoji(max_emoji=1))
+            # Extract current message text
+            text = message.text or message.caption or ""
 
-        # Extract current message text
-        text = message.text or message.caption or ""
+            # Regex to check if text contains only emojis
+            emoji_pattern = re.compile(r'^[\U0001F300-\U0001F6FF\U0001F900-\U0001F9FF\U0001F1E6-\U0001F1FF\s]+$')
 
-        # Regex to check if text contains only emojis
-        emoji_pattern = re.compile(r'^[\U0001F300-\U0001F6FF\U0001F900-\U0001F9FF\U0001F1E6-\U0001F1FF\s]+$')
+            if emoji_pattern.fullmatch(text.strip()):
+                return  # Ignore messages that contain only emojis
 
-        if emoji_pattern.fullmatch(text.strip()):
-            return  # Ignore messages that contain only emojis
+            await asyncio.sleep(5)
 
-        await asyncio.sleep(5)
+            # Append "#nma" if it's not already included
+            if "#NMA" not in text and message.chat.id == CHANNEL1:
+                updated_text = f"{text}\n\n#NMA #General"
 
-        # Append "#nma" if it's not already included
-        if "#NMA" not in text and message.chat.id == CHANNEL1:
-            updated_text = f"{text}\n\n#NMA #General"
+                if EMOJI:
+                    await other_bots_reactions(message, emojis=EMOJI)
+                else:
+                    await other_bots_reactions(message, emojis=get_random_emoji(max_emoji=8))
 
-            if message.text:
-                # Edit text message
-                await message.edit_text(updated_text)
-            elif message.caption or not message.media_group_id:
-                # Edit media message with a caption
-                await message.edit_caption(updated_text)
+                if message.text:
+                    # Edit text message
+                    await message.edit_text(updated_text)
+                elif message.caption or not message.media_group_id:
+                    # Edit media message with a caption
+                    await message.edit_caption(updated_text)
 
-        if "#NMA" not in text and message.chat.id == CHANNEL2:
-            updated_text = f"{text}\n\n#NMA #Content"
+            if "#NMA" not in text and message.chat.id == CHANNEL2:
+                updated_text = f"{text}\n\n#NMA #Content"
 
-            if message.text:
-                # Edit text message
-                await message.edit_text(updated_text)
-            elif message.caption or not message.media_group_id:
-                # Edit media message with a caption
-                await message.edit_caption(updated_text)
+                if EMOJI:
+                    await other_bots_reactions(message, emojis=EMOJI)
+                else:
+                    await other_bots_reactions(message, emojis=get_random_emoji(max_emoji=8))
+
+                if message.text:
+                    # Edit text message
+                    await message.edit_text(updated_text)
+                elif message.caption or not message.media_group_id:
+                    # Edit media message with a caption
+                    await message.edit_caption(updated_text)
 
     except Exception as e:
         logger.error(f"Error editing channel message: {str(e)}")
@@ -206,3 +241,22 @@ async def load_exist_file_if_present(file_name: str) -> List:
     except Exception as e:
         print(f"Unexpected error reading {file_name}.json: {e}")
         return []
+
+
+async def ask_(client: Bot, message: Message, name: str) -> str | None:
+    try:
+        response = await client.ask(
+            text=f"Enter {name} 🔢\n /cancel to cancel : ",
+            chat_id=message.from_user.id,
+            timeout=60,
+        )
+
+        if response.text == "/cancel":
+            await response.reply("Cancelled 😉!")
+            return None
+
+        return response.text
+
+    except Exception as e:
+        logger.error(f"Error in ask_: {str(e)}")
+        return None
