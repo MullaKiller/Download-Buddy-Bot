@@ -140,9 +140,27 @@ class ChannelBotManager:
                 )
             },
             {
-                "name": "OLD NMA Content bot",
+                "name": "Samosa16_bot",
                 "client": Client(
                     "Bot15",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="8120416099:AAFqCrk5C7cBMy7HkecA3VwUoOT7icqqK00"
+                )
+            },
+            {
+                "name": "Samosa17_bot",
+                "client": Client(
+                    "Bot16",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7277918007:AAE_Pq2jZEcKKzBs8I-tVopXFyxS_89GzMk"
+                )
+            },
+            {
+                "name": "OLD NMA Content bot",
+                "client": Client(
+                    "Bot18",
                     api_id=20579212,
                     api_hash="4861e861bffd7d533db630c1b941df72",
                     bot_token="7317356373:AAG4nLgjPgkmcVeVGeNJFFfXPyYRMMOjI5Q"
@@ -151,7 +169,7 @@ class ChannelBotManager:
             {
                 "name": "Contribution_bot",
                 "client": Client(
-                    "Bot16",
+                    "Bot19",
                     api_id=22999504,
                     api_hash="293765a6ae6fa5880fe8937a834d9126",
                     bot_token="7589544571:AAHvSmvN0lpOy5jbtqm7MS-85SYw18e93WE"
