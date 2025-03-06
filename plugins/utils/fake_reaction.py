@@ -158,12 +158,21 @@ class ChannelBotManager:
                 )
             },
             {
-                "name": "OLD NMA Content bot",
+                "name": "Samosa18_1_bot",
+                "client": Client(
+                    "Bot17",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7649106519:AAFqBL2bC-kuXGBw77ABTkoysSN-F7V6mlM"
+                )
+            },
+            {
+                "name": "NationalMutthalJavaBot",
                 "client": Client(
                     "Bot18",
-                    api_id=20579212,
-                    api_hash="4861e861bffd7d533db630c1b941df72",
-                    bot_token="7317356373:AAG4nLgjPgkmcVeVGeNJFFfXPyYRMMOjI5Q"
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7612262107:AAHj2-VQY_fvubQ1LOfNuwMGwbx95-EwEXQ"
                 )
             },
             {
