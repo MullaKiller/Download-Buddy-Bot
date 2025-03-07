@@ -176,9 +176,18 @@ class ChannelBotManager:
                 )
             },
             {
-                "name": "Contribution_bot",
+                "name": "nationalMutthalContentBot",
                 "client": Client(
                     "Bot19",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7549077210:AAE9qVolJ1dvYVQ4G8f6Zo9WIZStwa2H3lk"
+                )
+            },
+            {
+                "name": "Contribution_bot",
+                "client": Client(
+                    "Bot20",
                     api_id=22999504,
                     api_hash="293765a6ae6fa5880fe8937a834d9126",
                     bot_token="7589544571:AAHvSmvN0lpOy5jbtqm7MS-85SYw18e93WE"
