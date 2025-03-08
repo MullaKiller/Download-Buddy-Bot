@@ -185,12 +185,30 @@ class ChannelBotManager:
                 )
             },
             {
-                "name": "Contribution_bot",
+                "name": "NationalMutthalJavaBot",
                 "client": Client(
                     "Bot20",
                     api_id=22999504,
                     api_hash="293765a6ae6fa5880fe8937a834d9126",
+                    bot_token="7612262107:AAHj2-VQY_fvubQ1LOfNuwMGwbx95-EwEXQ"
+                )
+            },
+            {
+                "name": "Contribution_bot",
+                "client": Client(
+                    "Bot21",
+                    api_id=22999504,
+                    api_hash="293765a6ae6fa5880fe8937a834d9126",
                     bot_token="7589544571:AAHvSmvN0lpOy5jbtqm7MS-85SYw18e93WE"
+                )
+            },
+            {
+                "name": "NMA Content Bot",
+                "client": Client(
+                    "Bot22",
+                    api_id=20579212,
+                    api_hash="4861e861bffd7d533db630c1b941df72",
+                    bot_token="7317356373:AAG4nLgjPgkmcVeVGeNJFFfXPyYRMMOjI5Q"
                 )
             },
         ]

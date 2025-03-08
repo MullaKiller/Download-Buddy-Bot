@@ -82,7 +82,7 @@ async def alls(client: Bot, message: Message):
         logger.error(f"Error: {str(e)}")
 
 
-@Bot.on_message(filters.channel)
+@Bot.on_message(filters.channel & (filters.chat(settings.CHANNEL1) | filters.chat(settings.CHANNEL2)))
 async def edit_channel_messages_and_media(client: Bot, message: Message):
     try:
 
