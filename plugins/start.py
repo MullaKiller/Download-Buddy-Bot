@@ -90,6 +90,11 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
 
             # Reactions methods
             await random_emoji_reaction(client, message, emoji=get_random_emoji(max_emoji=1))
+            if settings.EMOJI:
+                await other_bots_reactions(message, emojis=settings.EMOJI)
+            else:
+                await other_bots_reactions(message, emojis=get_random_emoji(max_emoji=4))
+
             # Extract current message text
             text = message.text or message.caption or ""
 
@@ -105,11 +110,6 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
             if "#NMA" not in text and message.chat.id == settings.CHANNEL1:
                 updated_text = f"{text}\n\n#NMA #General"
 
-                if settings.EMOJI:
-                    await other_bots_reactions(message, emojis=settings.EMOJI)
-                else:
-                    await other_bots_reactions(message, emojis=get_random_emoji(max_emoji=8))
-
                 if message.text:
                     # Edit text message
                     await message.edit_text(updated_text)
@@ -117,13 +117,8 @@ async def edit_channel_messages_and_media(client: Bot, message: Message):
                     # Edit media message with a caption
                     await message.edit_caption(updated_text)
 
-            if "#NMA" not in text and message.chat.id == settings.CHANNEL2:
+            elif "#NMA" not in text and message.chat.id == settings.CHANNEL2:
                 updated_text = f"{text}\n\n#NMA #Content"
-
-                if settings.EMOJI:
-                    await other_bots_reactions(message, emojis=settings.EMOJI)
-                else:
-                    await other_bots_reactions(message, emojis=get_random_emoji(max_emoji=8))
 
                 if message.text:
                     # Edit text message
