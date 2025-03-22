@@ -4,6 +4,7 @@ from typing import Tuple, List
 import pyrogram.errors.exceptions.bad_request_400
 import requests
 from pyrogram import filters
+from pyrogram.errors import RPCError
 from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
 
 from config import settings
@@ -82,7 +83,11 @@ async def twitter(client: Bot, message: Message):
     url = message.text
 
     try:
-        await message.delete()
+        try:
+            await message.delete()
+        except RPCError:
+            pass
+
         tmp = await message.reply_text("Please wait! 🫷")
         if post_id := extract_post_from_link(url):
             api_url = "https://twitter-api45.p.rapidapi.com/tweet.php"
@@ -102,14 +107,28 @@ async def twitter(client: Bot, message: Message):
                 try:
                     message_list = await message.reply_media_group(all_image_url + all_video_url)
                     await random_emoji_reaction(client, message_list[0], emoji=get_random_emoji(max_emoji=1))
+
                 except pyrogram.errors.exceptions.bad_request_400.MediaCaptionTooLong:
                     all_image_url[0].caption = ""
                     message_list = await message.reply_media_group(all_image_url + all_video_url)
                     await random_emoji_reaction(client, message_list[0], emoji=get_random_emoji(max_emoji=1))
 
+                except pyrogram.errors.exceptions.bad_request_400.MultiMediaTooLong:
+                    tmp_list = all_image_url + all_video_url
+                    idx = 0
+                    while idx < len(tmp_list):
+                        if idx + 9 < len(tmp_list):
+                            message_list = await message.reply_media_group(tmp_list[idx:idx + 9])
+                            await random_emoji_reaction(client, message_list[0], emoji=get_random_emoji(max_emoji=1))
+                            idx += 9
+                        else:
+                            message_list = await message.reply_media_group(tmp_list[idx:len(tmp_list)])
+                            await random_emoji_reaction(client, message_list[0], emoji=get_random_emoji(max_emoji=1))
+                            idx += 9
+
                 logger.info(f"Successfully posted media group")
         else:
-            await message.reply_text("No media found in the Instagram post.")
+            await message.reply_text("No media found in the Twitter post.")
         await tmp.delete()
     except Exception as e:
         await message.reply_text(f"Something went wrong while processing your request {url}.")

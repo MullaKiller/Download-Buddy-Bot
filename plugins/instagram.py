@@ -4,6 +4,7 @@ from typing import Tuple, List
 import pyrogram.errors.exceptions.bad_request_400
 import requests
 from pyrogram import filters
+from pyrogram.errors import RPCError
 from pyrogram.types import Message, InputMediaVideo, InputMediaPhoto
 
 from config import settings
@@ -81,7 +82,11 @@ def retrieve_videos_and_images(data) -> Tuple[List[InputMediaPhoto], List[InputM
 async def instagram(client: Bot, message: Message):
     url = message.text
     try:
-        await message.delete()
+        try:
+            await message.delete()
+        except RPCError:
+            pass
+
         tmp = await message.reply_text("Please wait! 🫷")
         if post_id := extract_post_from_link(url):
             api_url = "https://instagram-best-experience.p.rapidapi.com/post"
