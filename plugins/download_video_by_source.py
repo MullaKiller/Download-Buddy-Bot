@@ -10,6 +10,7 @@ from pyrogram.errors import RPCError
 from pyrogram.types import Message
 
 from plugins.bot import Bot
+from plugins.utils.logger import log_info, log_warning, log_error
 
 
 @Bot.on_message(filters.channel & filters.command("d") & filters.chat(-1002417478505))
@@ -48,12 +49,12 @@ async def download_video(url, save_path):
                             if not chunk:
                                 break
                             file.write(chunk)
-                    print(f"Video downloaded successfully: {full_path}")
+                    log_info(f"Video downloaded successfully: {full_path}")
                     return full_path
                 else:
-                    print(f"Failed to download video. HTTP Status Code: {response.status}")
+                    log_warning(f"Failed to download video. HTTP Status Code: {response.status}")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        log_error(f"An error occurred: {e}")
 
 
 # Generate a random verification token
