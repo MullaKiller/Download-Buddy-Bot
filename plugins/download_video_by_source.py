@@ -40,8 +40,15 @@ async def download_video(url, save_path):
         # Create directory if it doesn't exist
         os.makedirs(save_path, exist_ok=True)
 
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept": "video/webm,video/mp4,video/*;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Referer": url
+        }
+
         async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
+            async with session.get(url, headers=headers) as response:
                 if response.status == 200:
                     with open(full_path, 'wb') as file:
                         while True:
