@@ -13,7 +13,7 @@ from plugins.bot import Bot
 from plugins.utils.logger import log_info, log_warning, log_error
 
 
-@Bot.on_message(filters.channel & filters.command("d") & filters.chat(-1002417478505))
+# @Bot.on_message(filters.channel & filters.command("d") & filters.chat(-1002417478505))
 async def download_video_by_source(client: Bot, message: Message):
 
     try:
@@ -24,7 +24,9 @@ async def download_video_by_source(client: Bot, message: Message):
             os.remove(full_path)
             await message.delete()
         else:
-            await message.reply_text("can't download the video something went wrong!")
+            tmp = await message.reply_text("can't download the video something went wrong!")
+            await asyncio.sleep(3)
+            await tmp.delete()
 
     except RPCError as e:
         tmp = await message.reply_text(f"something went wrong ! {e}")
